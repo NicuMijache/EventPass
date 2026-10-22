@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="EventPass.Server/EventPass.Server.csproj" />
+  <Project Path="EventPass.Tests/EventPass.Tests.csproj" />
+</Solution>
