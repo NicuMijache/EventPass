@@ -1,5 +1,7 @@
 # EventPass
 
+[![CI](https://github.com/NicuMijache/EventPass/actions/workflows/ci.yml/badge.svg)](https://github.com/NicuMijache/EventPass/actions/workflows/ci.yml)
+
 Platformă web de vânzare a biletelor la evenimente cu plată online (Stripe) și cod QR trimis pe email. La intrare, biletul se scanează și se validează pe server.
 
 ## Cum funcționează
