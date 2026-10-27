@@ -8,6 +8,27 @@ using Microsoft.Extensions.Options;
 
 namespace EventPass.Tests;
 
+// Înlocuiește stocarea reală a imaginilor: nu scrie nimic pe disc,
+// doar ține minte ce s-a salvat și ce s-a șters
+public class FakeImageStorage : IImageStorage
+{
+    public List<string> Saved { get; } = new();
+    public List<string> Deleted { get; } = new();
+
+    public Task<string> SaveEventImageAsync(Stream content, string extension, CancellationToken ct = default)
+    {
+        var path = $"/uploads/events/test-{Saved.Count + 1}{extension}";
+        Saved.Add(path);
+        return Task.FromResult(path);
+    }
+
+    public void Delete(string? publicPath)
+    {
+        if (!string.IsNullOrEmpty(publicPath))
+            Deleted.Add(publicPath);
+    }
+}
+
 public static class TestHelpers
 {
     public static readonly JwtOptions Jwt = new()

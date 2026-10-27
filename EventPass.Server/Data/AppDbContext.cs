@@ -28,7 +28,12 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Event>(e =>
         {
             e.Property(ev => ev.Title).HasMaxLength(200);
-            e.Property(ev => ev.Location).HasMaxLength(300);
+            e.Property(ev => ev.Venue).HasMaxLength(200);
+            e.Property(ev => ev.City).HasMaxLength(100);
+            e.Property(ev => ev.ImagePath).HasMaxLength(300);
+            // Pagina publică filtrează mereu după publicat + dată, apoi după oraș
+            e.HasIndex(ev => new { ev.IsPublished, ev.StartsAt });
+            e.HasIndex(ev => ev.City);
             // Un organizator cu evenimente nu poate fi șters
             e.HasOne(ev => ev.Organizer)
                 .WithMany(u => u.Events)

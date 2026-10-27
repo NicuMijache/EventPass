@@ -1,0 +1,124 @@
+<section class="container page">
+  <header class="page__head">
+    <h1 class="display">Descoperă evenimente</h1>
+    @if (filters(); as f) {
+      @if (totalEvents() > 0) {
+        <p class="page__lead">
+          {{ totalEvents() }} {{ totalEvents() === 1 ? 'eveniment' : 'evenimente' }}
+          în {{ f.cities.length }} {{ f.cities.length === 1 ? 'oraș' : 'orașe' }}
+        </p>
+      }
+    }
+  </header>
+
+  <div class="layout">
+    <!-- Panoul de filtre: lateral pe desktop, foaie care se deschide pe telefon -->
+    <aside class="sidebar" [class.sidebar--open]="filtersOpen()" aria-label="Filtre">
+      <div class="sidebar__backdrop" (click)="filtersOpen.set(false)"></div>
+      <div class="sidebar__panel">
+        <div class="sidebar__mobile-head">
+          <span class="sidebar__mobile-title">Filtre</span>
+          <button class="close-button" type="button" (click)="filtersOpen.set(false)" aria-label="Închide filtrele">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        @if (filters(); as f) {
+          <app-filter-panel
+            [cities]="f.cities"
+            [venues]="visibleVenues()"
+            [selectedCities]="selectedCities()"
+            [selectedVenues]="selectedVenues()"
+            (cityToggled)="toggleCity($event)"
+            (venueToggled)="toggleVenue($event)"
+            (citiesCleared)="clearCities()"
+            (venuesCleared)="clearVenues()"
+          />
+        } @else {
+          <p class="eyebrow">Se încarcă filtrele…</p>
+        }
+
+        <button class="sidebar__apply" type="button" (click)="filtersOpen.set(false)">Vezi rezultatele</button>
+      </div>
+    </aside>
+
+    <div class="content">
+      <div class="toolbar">
+        <label class="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <path d="m20 20-3.6-3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+          <span class="visually-hidden">Caută evenimente</span>
+          <input
+            type="search"
+            placeholder="Caută evenimente"
+            [value]="searchText()"
+            (input)="searchText.set($any($event.target).value)"
+          />
+        </label>
+
+        <button class="filters-button" type="button" (click)="filtersOpen.set(true)">
+          Filtre
+          @if (activeFilters().length) {
+            <span class="filters-button__count">{{ activeFilters().length }}</span>
+          }
+        </button>
+      </div>
+
+      @if (activeFilters().length) {
+        <ul class="chips" aria-label="Filtre active">
+          @for (filter of activeFilters(); track filter.kind + filter.name) {
+            <li>
+              <button class="chip" type="button" (click)="removeFilter(filter)" [attr.aria-label]="'Elimină filtrul ' + filter.name">
+                {{ filter.name }}
+                <svg viewBox="0 0 12 12" aria-hidden="true">
+                  <path d="M3 3l6 6M9 3 3 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                </svg>
+              </button>
+            </li>
+          }
+          <li><button class="chip chip--ghost" type="button" (click)="resetAll()">Resetează tot</button></li>
+        </ul>
+      }
+
+      @let s = state();
+      @if (s.status === 'loading') {
+          <div class="grid" aria-busy="true" aria-label="Se încarcă evenimentele">
+            @for (i of skeletons; track i) {
+              <div class="skeleton">
+                <div class="skeleton__poster"></div>
+                <div class="skeleton__line skeleton__line--short"></div>
+                <div class="skeleton__line"></div>
+              </div>
+            }
+          </div>
+      } @else if (s.status === 'error') {
+          <div class="message">
+            <p class="message__title">Nu am putut încărca evenimentele.</p>
+            <p class="message__text">Verifică dacă serverul e pornit și încearcă din nou.</p>
+            <button class="button" type="button" (click)="retry()">Încearcă din nou</button>
+          </div>
+      } @else if (s.events.length) {
+          <p class="results-count" aria-live="polite">
+            {{ s.events.length }} {{ s.events.length === 1 ? 'rezultat' : 'rezultate' }}
+          </p>
+          <div class="grid">
+            @for (event of s.events; track event.id) {
+              <app-event-card [event]="event" />
+            }
+          </div>
+      } @else {
+          <div class="message">
+            <p class="message__title">Niciun eveniment nu se potrivește.</p>
+            <p class="message__text">Încearcă alt oraș sau alt cuvânt de căutare.</p>
+            @if (activeFilters().length || searchText()) {
+              <button class="button" type="button" (click)="resetAll()">Resetează filtrele</button>
+            }
+          </div>
+      }
+    </div>
+  </div>
+</section>

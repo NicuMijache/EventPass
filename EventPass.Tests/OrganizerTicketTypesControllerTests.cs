@@ -19,8 +19,8 @@ public class OrganizerTicketTypesControllerTests
             new User { Id = 1, Email = "org1@example.com", Role = UserRole.Organizer },
             new User { Id = 2, Email = "org2@example.com", Role = UserRole.Organizer });
         db.Events.AddRange(
-            new Event { Id = 10, Title = "Al meu", Location = "Cluj", StartsAt = future, OrganizerId = 1, IsPublished = published },
-            new Event { Id = 20, Title = "Al altuia", Location = "Iași", StartsAt = future, OrganizerId = 2 });
+            new Event { Id = 10, Title = "Al meu", Venue = "BT Arena", City = "Cluj-Napoca", StartsAt = future, OrganizerId = 1, IsPublished = published },
+            new Event { Id = 20, Title = "Al altuia", Venue = "Sala Polivalentă", City = "Iași", StartsAt = future, OrganizerId = 2 });
         db.TicketTypes.AddRange(
             new TicketType { Id = 100, Name = "Standard", Price = 80, Capacity = 200, Sold = 30, EventId = 10 },
             new TicketType { Id = 101, Name = "VIP", Price = 200, Capacity = 50, EventId = 10 });

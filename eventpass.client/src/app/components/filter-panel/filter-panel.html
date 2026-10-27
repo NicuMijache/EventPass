@@ -1,0 +1,51 @@
+<p class="eyebrow">Filtre</p>
+
+<fieldset class="group">
+  <legend class="group__title">Oraș</legend>
+  <label class="option">
+    <input type="checkbox" [checked]="selectedCities().length === 0" (change)="citiesCleared.emit()" />
+    <span class="option__box" aria-hidden="true"></span>
+    <span class="option__label">Toate</span>
+  </label>
+  @for (city of cities(); track city.name) {
+    <label class="option">
+      <input type="checkbox" [checked]="selectedCities().includes(city.name)" (change)="cityToggled.emit(city.name)" />
+      <span class="option__box" aria-hidden="true"></span>
+      <span class="option__label">{{ city.name }}</span>
+      <span class="option__count">{{ city.count }}</span>
+    </label>
+  }
+</fieldset>
+
+<hr class="divider" />
+
+<fieldset class="group">
+  <legend class="group__title">Locație</legend>
+  <label class="option">
+    <input type="checkbox" [checked]="selectedVenues().length === 0" (change)="venuesCleared.emit()" />
+    <span class="option__box" aria-hidden="true"></span>
+    <span class="option__label">Toate</span>
+  </label>
+  @for (venue of visibleVenues(); track venue.name + venue.city) {
+    <label class="option">
+      <input type="checkbox" [checked]="selectedVenues().includes(venue.name)" (change)="venueToggled.emit(venue.name)" />
+      <span class="option__box" aria-hidden="true"></span>
+      <span class="option__label">
+        {{ venue.name }}
+        <small>{{ venue.city }}</small>
+      </span>
+      <span class="option__count">{{ venue.count }}</span>
+    </label>
+  } @empty {
+    <p class="group__empty">Nicio locație pentru orașele alese.</p>
+  }
+
+  @if (hasMoreVenues()) {
+    <button class="more" type="button" (click)="showAllVenues.update((v) => !v)" [attr.aria-expanded]="showAllVenues()">
+      <svg viewBox="0 0 12 12" aria-hidden="true" [class.more__icon--up]="showAllVenues()">
+        <path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.4" />
+      </svg>
+      {{ showAllVenues() ? 'Vezi mai puține' : 'Vezi mai multe' }}
+    </button>
+  }
+</fieldset>
