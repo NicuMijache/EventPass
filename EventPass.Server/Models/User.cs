@@ -4,7 +4,8 @@ public enum UserRole
 {
     Client,
     Organizer,
-    Staff
+    Staff,
+    Admin
 }
 
 public class User
