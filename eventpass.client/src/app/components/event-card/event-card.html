@@ -1,0 +1,35 @@
+@let e = event();
+<a class="card" [routerLink]="['/evenimente', e.id]">
+  <div class="card__poster">
+    @if (e.imageUrl) {
+      <img [src]="e.imageUrl" [alt]="'Poster ' + e.title" loading="lazy" />
+    } @else {
+      <!-- Fără poster: un fundal neutru cu titlul, ca grila să rămână uniformă -->
+      <div class="card__placeholder" aria-hidden="true">
+        <span>{{ e.title }}</span>
+      </div>
+    }
+    @if (e.soldOut) {
+      <span class="card__badge">Sold out</span>
+    }
+  </div>
+
+  <div class="card__body">
+    <p class="card__date">
+      <time [attr.datetime]="e.startsAt">{{ e.startsAt | date: 'EEE, d MMM · HH:mm' }}</time>
+    </p>
+    <h3 class="card__title">{{ e.title }}</h3>
+    <p class="card__place">{{ e.venue }}, {{ e.city }}</p>
+    <p class="card__price">
+      @if (e.soldOut) {
+        Bilete epuizate
+      } @else if (e.minPrice !== null) {
+        @if (e.minPrice === 0) {
+          Intrare gratuită
+        } @else {
+          de la {{ e.minPrice | number: '1.0-2' }} lei
+        }
+      }
+    </p>
+  </div>
+</a>

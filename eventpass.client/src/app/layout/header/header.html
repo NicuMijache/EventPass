@@ -1,0 +1,40 @@
+<header class="header">
+  <div class="container header__inner">
+    <a class="logo" routerLink="/" (click)="closeMenu()" aria-label="EventPass – pagina principală">
+      <!-- Bilet stilizat: dreptunghi cu o decupătură pe margine -->
+      <svg class="logo__mark" viewBox="0 0 32 24" aria-hidden="true">
+        <path d="M2 4a2 2 0 0 1 2-2h24a2 2 0 0 1 2 2v5a3 3 0 0 0 0 6v5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5a3 3 0 0 0 0-6Z"
+              fill="none" stroke="currentColor" stroke-width="1.8" />
+        <path d="M20 5v14" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2 2.2" />
+      </svg>
+      <span class="logo__text">EVENTPASS</span>
+    </a>
+
+    <nav class="nav" [class.nav--open]="menuOpen()" aria-label="Navigare principală">
+      <a class="nav__link" routerLink="/" routerLinkActive="nav__link--active"
+         [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">Evenimente</a>
+    </nav>
+
+    <div class="actions">
+      <!-- Autentificarea în interfață vine odată cu coșul (#10) -->
+      <span class="icon-button icon-button--disabled" title="Contul meu – în curând" aria-disabled="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.6" />
+          <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+        </svg>
+        <span class="visually-hidden">Contul meu (în curând)</span>
+      </span>
+
+      <button class="icon-button menu-button" type="button" (click)="toggleMenu()"
+              [attr.aria-expanded]="menuOpen()" aria-label="Meniu">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          @if (menuOpen()) {
+            <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          } @else {
+            <path d="M4 8h16M4 16h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          }
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>

@@ -30,6 +30,11 @@ namespace EventPass.Server.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -37,13 +42,12 @@ namespace EventPass.Server.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("IsPublished")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Location")
-                        .IsRequired()
+                    b.Property<string>("ImagePath")
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("OrganizerId")
                         .HasColumnType("integer");
@@ -56,9 +60,18 @@ namespace EventPass.Server.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<string>("Venue")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("City");
+
                     b.HasIndex("OrganizerId");
+
+                    b.HasIndex("IsPublished", "StartsAt");
 
                     b.ToTable("Events");
                 });

@@ -20,17 +20,17 @@ public class OrganizerEventsControllerTests
             new User { Id = 2, Email = "org2@example.com", Role = UserRole.Organizer },
             new User { Id = 3, Email = "client@example.com", Role = UserRole.Client });
         db.Events.AddRange(
-            new Event { Id = 10, Title = "Al meu", Location = "Cluj", StartsAt = Future, OrganizerId = 1 },
-            new Event { Id = 20, Title = "Al altuia", Location = "Iași", StartsAt = Future, OrganizerId = 2 });
+            new Event { Id = 10, Title = "Al meu", Venue = "BT Arena", City = "Cluj-Napoca", StartsAt = Future, OrganizerId = 1 },
+            new Event { Id = 20, Title = "Al altuia", Venue = "Sala Polivalentă", City = "Iași", StartsAt = Future, OrganizerId = 2 });
         db.SaveChanges();
 
-        var controller = new OrganizerEventsController(db);
+        var controller = new OrganizerEventsController(db, new FakeImageStorage());
         TestHelpers.LoginAs(controller, userId: 1, role: "Organizer");
         return (db, controller);
     }
 
     private static SaveEventRequest Request(DateTime startsAt) =>
-        new("Concert", "Descriere", "Sala Polivalentă", startsAt);
+        new("Concert", "Descriere", "Sala Polivalentă", "Cluj-Napoca", startsAt);
 
     [Fact]
     public async Task Create_EvenimentNouPornesteCaCiorna()

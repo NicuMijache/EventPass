@@ -1,0 +1,139 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  gap: var(--space-8);
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.logo__mark {
+  width: 32px;
+  height: 24px;
+}
+
+.logo__text {
+  font-weight: 600;
+  font-size: var(--text-md);
+  letter-spacing: 0.14em;
+}
+
+.nav {
+  display: flex;
+  gap: var(--space-8);
+}
+
+.nav__link {
+  position: relative;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  padding-block: var(--space-2);
+
+  // Linie fină sub linkul activ / la hover
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--duration) var(--ease);
+  }
+
+  &:hover::after,
+  &--active::after {
+    transform: scaleX(1);
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  transition: background var(--duration) var(--ease);
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  &:hover {
+    background: var(--color-surface);
+  }
+
+  &--disabled {
+    color: var(--color-text-muted);
+    cursor: default;
+
+    &:hover {
+      background: transparent;
+    }
+  }
+}
+
+.menu-button {
+  display: none;
+}
+
+// ---- Telefon: meniul devine un panou sub antet ----
+@media (max-width: 720px) {
+  .menu-button {
+    display: inline-grid;
+  }
+
+  .nav {
+    display: none;
+    position: absolute;
+    top: var(--header-height);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 0;
+    padding: var(--space-4) var(--page-gutter) var(--space-8);
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .nav--open {
+    display: flex;
+  }
+
+  .nav__link {
+    padding-block: var(--space-4);
+    font-size: var(--text-lg);
+    border-bottom: 1px solid var(--color-border);
+
+    &::after {
+      display: none;
+    }
+  }
+}

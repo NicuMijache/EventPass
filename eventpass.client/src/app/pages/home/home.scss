@@ -1,0 +1,358 @@
+.page {
+  padding-block: var(--space-16) 0;
+}
+
+.page__head {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-12);
+}
+
+.page__lead {
+  font-size: var(--text-lg);
+  color: var(--color-text-muted);
+}
+
+// ---- Layout: panou lateral + conținut ----
+.layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: var(--space-12);
+  align-items: start;
+}
+
+.sidebar__panel {
+  position: sticky;
+  top: calc(var(--header-height) + var(--space-6));
+  display: grid;
+  gap: var(--space-6);
+  padding: var(--space-8) var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+}
+
+.sidebar__backdrop,
+.sidebar__mobile-head,
+.sidebar__apply {
+  display: none;
+}
+
+.content {
+  display: grid;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+// ---- Căutare ----
+.toolbar {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 560px;
+  height: 64px;
+  padding-inline: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--duration) var(--ease);
+
+  &:focus-within {
+    border-color: var(--color-text);
+  }
+
+  svg {
+    flex: none;
+    width: 22px;
+    height: 22px;
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font-size: var(--text-md);
+    text-transform: uppercase;
+
+    &::placeholder {
+      color: var(--color-text-muted);
+    }
+
+    // Placeholder-ul e cu majuscule, dar textul scris rămâne cum îl tastezi
+    &:not(:placeholder-shown) {
+      text-transform: none;
+    }
+  }
+}
+
+.filters-button {
+  display: none;
+  align-items: center;
+  gap: var(--space-2);
+  padding-inline: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.filters-button__count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: var(--radius-pill);
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: var(--text-xs);
+}
+
+// ---- Filtre active (pastile) ----
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 34px;
+  padding-inline: var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  font-size: var(--text-sm);
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  &:hover {
+    border-color: var(--color-text);
+  }
+}
+
+.chip--ghost {
+  border-color: transparent;
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.results-count {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+// ---- Grila de postere ----
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-12) var(--space-6);
+}
+
+// Schelet afișat cât timp se încarcă lista
+.skeleton {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.skeleton__poster,
+.skeleton__line {
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, var(--color-surface) 0%, #ececea 50%, var(--color-surface) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.skeleton__poster {
+  aspect-ratio: 3 / 4;
+}
+
+.skeleton__line {
+  height: 14px;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton__line--short {
+  width: 45%;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+// ---- Mesaje (eroare / niciun rezultat) ----
+.message {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  padding: var(--space-12) var(--space-8);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+}
+
+.message__title {
+  font-size: var(--text-xl);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.message__text {
+  color: var(--color-text-muted);
+}
+
+.button {
+  margin-top: var(--space-3);
+  height: 48px;
+  padding-inline: var(--space-8);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+.close-button {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+// ---- Tabletă: panoul lateral mai îngust ----
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: var(--space-8);
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+// ---- Telefon: filtrele devin o foaie care urcă de jos ----
+@media (max-width: 860px) {
+  .page {
+    padding-top: var(--space-12);
+  }
+
+  .page__head {
+    margin-bottom: var(--space-8);
+  }
+
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .search {
+    height: 52px;
+    padding-inline: var(--space-4);
+  }
+
+  .filters-button {
+    display: inline-flex;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-8) var(--space-4);
+  }
+
+  .sidebar {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    visibility: hidden;
+  }
+
+  .sidebar--open {
+    visibility: visible;
+  }
+
+  .sidebar__backdrop {
+    display: block;
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    opacity: 0;
+    transition: opacity var(--duration) var(--ease);
+  }
+
+  .sidebar--open .sidebar__backdrop {
+    opacity: 1;
+  }
+
+  .sidebar__panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    max-height: 85vh;
+    overflow-y: auto;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-bottom: 0;
+    padding: var(--space-6) var(--page-gutter) var(--space-8);
+    transform: translateY(100%);
+    transition: transform 280ms var(--ease);
+  }
+
+  .sidebar--open .sidebar__panel {
+    transform: translateY(0);
+  }
+
+  .sidebar__mobile-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sidebar__mobile-title {
+    font-size: var(--text-xl);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  .sidebar__apply {
+    display: block;
+    height: 52px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
+    color: var(--color-accent-contrast);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+  }
+}

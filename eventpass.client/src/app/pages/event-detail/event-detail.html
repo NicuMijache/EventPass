@@ -1,0 +1,92 @@
+<section class="container page">
+  <a class="back" routerLink="/">
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.5" />
+    </svg>
+    Toate evenimentele
+  </a>
+
+  @let s = state();
+  @if (s.status === 'loading') {
+    <div class="layout" aria-busy="true">
+      <div class="poster skeleton"></div>
+      <div class="info">
+        <div class="skeleton skeleton--line skeleton--short"></div>
+        <div class="skeleton skeleton--title"></div>
+        <div class="skeleton skeleton--line"></div>
+      </div>
+    </div>
+  } @else if (s.status === 'not-found') {
+    <div class="message">
+      <p class="message__title">Evenimentul nu există sau nu mai este disponibil.</p>
+      <a class="button" routerLink="/">Vezi toate evenimentele</a>
+    </div>
+  } @else if (s.status === 'error') {
+    <div class="message">
+      <p class="message__title">Nu am putut încărca evenimentul.</p>
+      <p class="message__text">Verifică dacă serverul e pornit și reîncarcă pagina.</p>
+    </div>
+  } @else {
+    @let e = s.event;
+    <article class="layout">
+      <div class="poster">
+        @if (e.imageUrl) {
+          <img [src]="e.imageUrl" [alt]="'Poster ' + e.title" />
+        } @else {
+          <div class="poster__placeholder" aria-hidden="true">{{ e.title }}</div>
+        }
+      </div>
+
+      <div class="info">
+        <p class="eyebrow">
+          <time [attr.datetime]="e.startsAt">{{ e.startsAt | date: 'EEEE, d MMMM y · HH:mm' }}</time>
+        </p>
+        <h1 class="display title">{{ e.title }}</h1>
+
+        <p class="place">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z" fill="none" stroke="currentColor" stroke-width="1.5" />
+            <circle cx="12" cy="9.5" r="2.5" fill="none" stroke="currentColor" stroke-width="1.5" />
+          </svg>
+          <span>{{ e.venue }}, {{ e.city }}</span>
+        </p>
+
+        @if (e.description) {
+          <p class="description">{{ e.description }}</p>
+        }
+
+        <section class="tickets" aria-labelledby="tickets-title">
+          <h2 id="tickets-title" class="tickets__title">Bilete</h2>
+          <ul class="tickets__list">
+            @for (t of e.ticketTypes; track t.id) {
+              <li class="ticket" [class.ticket--sold-out]="t.available === 0">
+                <div>
+                  <p class="ticket__name">{{ t.name }}</p>
+                  <p class="ticket__stock">
+                    @if (t.available === 0) {
+                      Epuizat
+                    } @else if (t.available <= lowStock) {
+                      Ultimele {{ t.available }} {{ t.available === 1 ? 'loc' : 'locuri' }}
+                    } @else {
+                      Disponibil
+                    }
+                  </p>
+                </div>
+                <p class="ticket__price">
+                  @if (t.price === 0) {
+                    Gratuit
+                  } @else {
+                    {{ t.price | number: '1.0-2' }} lei
+                  }
+                </p>
+              </li>
+            }
+          </ul>
+
+          <!-- Coșul și plata vin la #10 și #11 -->
+          <button class="button button--wide" type="button" disabled>Cumpără – în curând</button>
+        </section>
+      </div>
+    </article>
+  }
+</section>

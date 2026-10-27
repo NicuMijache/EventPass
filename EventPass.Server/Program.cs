@@ -24,6 +24,7 @@ if (jwt.Key.Length < 32)
 
 builder.Services.Configure<JwtOptions>(jwtSection);
 builder.Services.AddSingleton<TokenService>();
+builder.Services.AddSingleton<IImageStorage, LocalImageStorage>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services
@@ -86,6 +87,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Servește fișierele din wwwroot (ex. posterele din /uploads/events)
+app.UseStaticFiles();
 
 // Ordinea contează: întâi aflăm cine e utilizatorul, apoi verificăm ce are voie
 app.UseAuthentication();

@@ -16,10 +16,12 @@ namespace EventPass.Server.Controllers;
 public class OrganizerEventsController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly IImageStorage _images;
 
-    public OrganizerEventsController(AppDbContext db)
+    public OrganizerEventsController(AppDbContext db, IImageStorage images)
     {
         _db = db;
+        _images = images;
     }
 
     [HttpGet]
@@ -30,7 +32,7 @@ public class OrganizerEventsController : ControllerBase
             .Where(e => e.OrganizerId == userId)
             .OrderBy(e => e.StartsAt)
             .Select(e => new EventSummaryDto(
-                e.Id, e.Title, e.Location, e.StartsAt, e.IsPublished, e.TicketTypes.Count))
+                e.Id, e.Title, e.Venue, e.City, e.StartsAt, e.ImagePath, e.IsPublished, e.TicketTypes.Count))
             .ToListAsync();
 
         return Ok(events);
@@ -58,7 +60,8 @@ public class OrganizerEventsController : ControllerBase
         {
             Title = request.Title.Trim(),
             Description = request.Description?.Trim() ?? string.Empty,
-            Location = request.Location.Trim(),
+            Venue = request.Venue.Trim(),
+            City = request.City.Trim(),
             StartsAt = startsAt,
             OrganizerId = User.GetUserId()
         };
@@ -82,9 +85,57 @@ public class OrganizerEventsController : ControllerBase
 
         ev.Title = request.Title.Trim();
         ev.Description = request.Description?.Trim() ?? string.Empty;
-        ev.Location = request.Location.Trim();
+        ev.Venue = request.Venue.Trim();
+        ev.City = request.City.Trim();
         ev.StartsAt = startsAt;
         await _db.SaveChangesAsync();
+
+        return Ok(ToDetail(ev));
+    }
+
+    // Încarcă (sau înlocuiește) posterul evenimentului: JPG, PNG sau WEBP, maxim 5 MB
+    [HttpPost("{id:int}/image")]
+    [RequestSizeLimit(ImageValidator.MaxBytes + 64 * 1024)]
+    public async Task<ActionResult<EventDetailDto>> UploadImage(int id, IFormFile file, CancellationToken ct)
+    {
+        var ev = await FindMyEventAsync(id);
+        if (ev is null)
+            return NotFound();
+
+        if (file.Length == 0)
+            return BadRequest(new { message = "Fișierul este gol." });
+        if (file.Length > ImageValidator.MaxBytes)
+            return BadRequest(new { message = "Imaginea poate avea maxim 5 MB." });
+
+        await using var stream = file.OpenReadStream();
+        var header = new byte[12];
+        var read = await stream.ReadAtLeastAsync(header, header.Length, throwOnEndOfStream: false, ct);
+        var extension = ImageValidator.DetectExtension(header.AsSpan(0, read));
+        if (extension is null)
+            return BadRequest(new { message = "Sunt acceptate doar imagini JPG, PNG sau WEBP." });
+
+        stream.Position = 0;
+        var newPath = await _images.SaveEventImageAsync(stream, extension, ct);
+
+        var oldPath = ev.ImagePath;
+        ev.ImagePath = newPath;
+        await _db.SaveChangesAsync(ct);
+        _images.Delete(oldPath);
+
+        return Ok(ToDetail(ev));
+    }
+
+    [HttpDelete("{id:int}/image")]
+    public async Task<ActionResult<EventDetailDto>> DeleteImage(int id)
+    {
+        var ev = await FindMyEventAsync(id);
+        if (ev is null)
+            return NotFound();
+
+        var oldPath = ev.ImagePath;
+        ev.ImagePath = null;
+        await _db.SaveChangesAsync();
+        _images.Delete(oldPath);
 
         return Ok(ToDetail(ev));
     }
@@ -136,6 +187,7 @@ public class OrganizerEventsController : ControllerBase
 
         _db.Events.Remove(ev);
         await _db.SaveChangesAsync();
+        _images.Delete(ev.ImagePath);
 
         return NoContent();
     }
@@ -160,8 +212,10 @@ public class OrganizerEventsController : ControllerBase
         ev.Id,
         ev.Title,
         ev.Description,
-        ev.Location,
+        ev.Venue,
+        ev.City,
         ev.StartsAt,
+        ev.ImagePath,
         ev.IsPublished,
         ev.CreatedAt,
         ev.TicketTypes
