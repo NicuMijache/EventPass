@@ -1,0 +1,45 @@
+<section class="container auth">
+  <div class="auth__intro">
+    <h1 class="display">Creează cont</h1>
+    <p class="auth__lead">Durează un minut. Biletele cumpărate vin pe emailul pe care îl introduci aici.</p>
+  </div>
+
+  <form class="auth__card" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (error(); as message) {
+      <p class="form-alert" role="alert">{{ message }}</p>
+    }
+
+    <label class="field">
+      <span class="field__label">Nume complet</span>
+      <input class="field__input" type="text" formControlName="fullName" autocomplete="name" />
+      @if (form.controls.fullName.touched && form.controls.fullName.invalid) {
+        <span class="field__error">Introdu numele.</span>
+      }
+    </label>
+
+    <label class="field">
+      <span class="field__label">Email</span>
+      <input class="field__input" type="email" formControlName="email" autocomplete="email" />
+      @if (form.controls.email.touched && form.controls.email.invalid) {
+        <span class="field__error">Introdu o adresă de email validă.</span>
+      }
+    </label>
+
+    <label class="field">
+      <span class="field__label">Parolă</span>
+      <input class="field__input" type="password" formControlName="password" autocomplete="new-password" />
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <span class="field__error">Parola trebuie să aibă cel puțin 8 caractere.</span>
+      }
+    </label>
+
+    <button class="btn btn--wide" type="submit" [disabled]="submitting()">
+      {{ submitting() ? 'Se creează contul…' : 'Creează cont' }}
+    </button>
+
+    <p class="auth__switch">
+      Ai deja cont?
+      <a routerLink="/login" [queryParams]="returnUrl() ? { returnUrl: returnUrl() } : {}">Intră în cont</a>
+    </p>
+  </form>
+</section>

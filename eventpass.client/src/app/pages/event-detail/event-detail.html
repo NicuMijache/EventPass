@@ -60,9 +60,15 @@
           <ul class="tickets__list">
             @for (t of e.ticketTypes; track t.id) {
               <li class="ticket" [class.ticket--sold-out]="t.available === 0">
-                <div>
+                <div class="ticket__info">
                   <p class="ticket__name">{{ t.name }}</p>
                   <p class="ticket__stock">
+                    @if (t.price === 0) {
+                      Gratuit
+                    } @else {
+                      {{ t.price | number: '1.0-2' }} lei
+                    }
+                    ·
                     @if (t.available === 0) {
                       Epuizat
                     } @else if (t.available <= lowStock) {
@@ -72,19 +78,37 @@
                     }
                   </p>
                 </div>
-                <p class="ticket__price">
-                  @if (t.price === 0) {
-                    Gratuit
-                  } @else {
-                    {{ t.price | number: '1.0-2' }} lei
-                  }
-                </p>
+
+                @if (t.available > 0) {
+                  <div class="stepper" role="group" [attr.aria-label]="'Cantitate ' + t.name">
+                    <button type="button" (click)="change(t, -1)" [disabled]="quantityOf(t) === 0" aria-label="Mai puține">−</button>
+                    <span class="stepper__value" aria-live="polite">{{ quantityOf(t) }}</span>
+                    <button type="button" (click)="change(t, 1)" [disabled]="!canIncrease(t)" aria-label="Mai multe">+</button>
+                  </div>
+                }
               </li>
             }
           </ul>
 
-          <!-- Coșul și plata vin la #10 și #11 -->
-          <button class="button button--wide" type="button" disabled>Cumpără – în curând</button>
+          @if (error(); as message) {
+            <p class="form-alert" role="alert">{{ message }}</p>
+          }
+
+          <div class="summary">
+            <div>
+              <p class="summary__label">
+                {{ totalTickets() }} {{ totalTickets() === 1 ? 'bilet' : 'bilete' }}
+                @if (totalTickets() >= maxTickets) {
+                  · maxim {{ maxTickets }} pe comandă
+                }
+              </p>
+              <p class="summary__total">{{ totalPrice() | number: '1.0-2' }} lei</p>
+            </div>
+            <button class="btn" type="button" (click)="reserve(e.id)" [disabled]="totalTickets() === 0 || submitting()">
+              {{ submitting() ? 'Se rezervă…' : 'Rezervă biletele' }}
+            </button>
+          </div>
+          <p class="tickets__note">Locurile se păstrează 15 minute, cât finalizezi plata.</p>
         </section>
       </div>
     </article>

@@ -1,0 +1,51 @@
+// Comun pentru paginile de login și cont nou
+.auth {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
+  gap: var(--space-16);
+  align-items: start;
+  padding-block: var(--space-16) 0;
+}
+
+.auth__intro {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.auth__lead {
+  max-width: 40ch;
+  font-size: var(--text-lg);
+  color: var(--color-text-muted);
+}
+
+.auth__card {
+  display: grid;
+  gap: var(--space-6);
+  padding: var(--space-8);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.auth__switch {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+
+  a {
+    color: var(--color-text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+@media (max-width: 860px) {
+  .auth {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-8);
+    padding-top: var(--space-12);
+  }
+
+  .auth__card {
+    padding: var(--space-6) var(--space-4);
+  }
+}

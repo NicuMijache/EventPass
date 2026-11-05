@@ -25,6 +25,7 @@ if (jwt.Key.Length < 32)
 builder.Services.Configure<JwtOptions>(jwtSection);
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddSingleton<IImageStorage, LocalImageStorage>();
+builder.Services.AddScoped<SeatReservationService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services

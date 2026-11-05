@@ -1,0 +1,261 @@
+// Comun pentru „Comenzile mele” și pagina unei comenzi
+.page {
+  padding-block: var(--space-8) 0;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-8);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    color: var(--color-text);
+  }
+}
+
+.order-head {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-12);
+}
+
+.order-head__title {
+  font-size: clamp(2.25rem, 5vw, 3.75rem);
+}
+
+// ---- Eticheta stării ----
+.status {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-strong);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.status--paid {
+  border-color: var(--color-text);
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+.status--cancelled,
+.status--refunded {
+  color: var(--color-text-muted);
+}
+
+// ---- Pagina unei comenzi ----
+.order-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: var(--space-12);
+  align-items: start;
+}
+
+.order-main {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.order-event {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.order-event__poster,
+.order-row__poster {
+  flex: none;
+  width: 96px;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.order-event__date {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.order-event__title {
+  font-size: var(--text-xl);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.order-event__place {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--color-border);
+}
+
+.line {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: var(--space-6);
+  padding-block: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.line__muted {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  align-self: center;
+}
+
+.line__total {
+  min-width: 90px;
+  text-align: right;
+}
+
+.line--total {
+  border-bottom: 0;
+  font-size: var(--text-lg);
+  font-weight: 500;
+}
+
+.order-side {
+  position: sticky;
+  top: calc(var(--header-height) + var(--space-6));
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.timer {
+  margin-bottom: var(--space-3);
+}
+
+.timer__label {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.timer__value {
+  font-size: 3rem;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer--urgent .timer__value {
+  color: var(--color-danger);
+}
+
+// ---- „Comenzile mele” ----
+.order-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--color-border);
+}
+
+.order-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding-block: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  transition: background var(--duration) var(--ease);
+
+  &:hover {
+    background: var(--color-surface);
+  }
+}
+
+.order-row__poster {
+  width: 64px;
+}
+
+.order-row__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.order-row__end {
+  display: grid;
+  justify-items: end;
+  gap: var(--space-2);
+}
+
+.order-row__total {
+  font-weight: 500;
+}
+
+.message {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-4);
+  padding: var(--space-12) var(--space-8);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+}
+
+.message__title {
+  font-size: var(--text-xl);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 860px) {
+  .order-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-8);
+  }
+
+  .order-side {
+    position: static;
+  }
+
+  .line {
+    grid-template-columns: 1fr auto;
+
+    .line__muted {
+      display: none;
+    }
+  }
+
+  .order-row {
+    flex-wrap: wrap;
+  }
+
+  .order-row__end {
+    justify-items: start;
+    width: 100%;
+    grid-auto-flow: column;
+    justify-content: space-between;
+  }
+}

@@ -1,0 +1,83 @@
+import { Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
+import { DatePipe, DecimalPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { OrdersService } from '../../core/services/orders.service';
+import { errorMessage } from '../../core/http-errors';
+import { Order, ORDER_STATUS_LABELS } from '../../core/models/order.models';
+
+// Pagina unei comenzi: ce ai rezervat, cât costă și cât timp mai ai până expiră rezervarea
+@Component({
+  selector: 'app-order-detail',
+  imports: [RouterLink, DatePipe, DecimalPipe],
+  templateUrl: './order-detail.html',
+  styleUrl: './orders.scss',
+})
+export class OrderDetail {
+  private readonly ordersService = inject(OrdersService);
+
+  readonly id = input.required<string>();
+
+  protected readonly order = signal<Order | null>(null);
+  protected readonly loadError = signal<string | null>(null);
+  protected readonly actionError = signal<string | null>(null);
+  protected readonly cancelling = signal(false);
+  protected readonly labels = ORDER_STATUS_LABELS;
+
+  // „Acum”, actualizat în fiecare secundă pentru numărătoarea inversă
+  private readonly now = signal(Date.now());
+
+  protected readonly secondsLeft = computed(() => {
+    const o = this.order();
+    if (!o || o.status !== 'Pending' || !o.expiresAt) return 0;
+    return Math.max(0, Math.floor((new Date(o.expiresAt).getTime() - this.now()) / 1000));
+  });
+
+  protected readonly countdown = computed(() => {
+    const s = this.secondsLeft();
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  });
+
+  private refreshedAfterExpiry = false;
+
+  constructor() {
+    const timer = setInterval(() => this.now.set(Date.now()), 1000);
+    inject(DestroyRef).onDestroy(() => clearInterval(timer));
+
+    // Se încarcă de fiecare dată când se schimbă id-ul din adresă
+    effect(() => this.load(Number(this.id())));
+
+    // Când timpul expiră, cerem din nou comanda: serverul o marchează ca anulată
+    effect(() => {
+      const o = this.order();
+      if (o?.status === 'Pending' && this.secondsLeft() === 0 && !this.refreshedAfterExpiry) {
+        this.refreshedAfterExpiry = true;
+        this.load(o.id);
+      }
+    });
+  }
+
+  protected cancel(): void {
+    const o = this.order();
+    if (!o) return;
+    this.cancelling.set(true);
+    this.actionError.set(null);
+    this.ordersService.cancel(o.id).subscribe({
+      next: (updated) => {
+        this.order.set(updated);
+        this.cancelling.set(false);
+      },
+      error: (err) => {
+        this.actionError.set(errorMessage(err));
+        this.cancelling.set(false);
+      },
+    });
+  }
+
+  private load(id: number): void {
+    this.ordersService.get(id).subscribe({
+      next: (order) => this.order.set(order),
+      error: (err) =>
+        this.loadError.set(err.status === 404 ? 'Comanda nu există.' : errorMessage(err)),
+    });
+  }
+}
