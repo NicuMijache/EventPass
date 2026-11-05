@@ -1,0 +1,44 @@
+<section class="container page">
+  <header class="order-head">
+    <h1 class="display">Comenzile mele</h1>
+  </header>
+
+  @let s = state();
+  @if (s.status === 'loading') {
+    <p class="eyebrow">Se încarcă…</p>
+  } @else if (s.status === 'error') {
+    <div class="message">
+      <p class="message__title">Nu am putut încărca comenzile.</p>
+    </div>
+  } @else if (s.orders.length === 0) {
+    <div class="message">
+      <p class="message__title">Nu ai nicio comandă încă.</p>
+      <a class="btn" routerLink="/">Descoperă evenimente</a>
+    </div>
+  } @else {
+    <ul class="order-list">
+      @for (o of s.orders; track o.id) {
+        <li>
+          <a class="order-row" [routerLink]="['/comenzi', o.id]">
+            <div class="order-row__poster">
+              @if (o.event.imageUrl) {
+                <img [src]="o.event.imageUrl" alt="" loading="lazy" />
+              }
+            </div>
+            <div class="order-row__main">
+              <p class="order-event__date">{{ o.event.startsAt | date: 'EEE, d MMM y · HH:mm' }}</p>
+              <p class="order-event__title">{{ o.event.title }}</p>
+              <p class="order-event__place">
+                {{ ticketCount(o) }} {{ ticketCount(o) === 1 ? 'bilet' : 'bilete' }} · comanda #{{ o.id }}
+              </p>
+            </div>
+            <div class="order-row__end">
+              <span class="status status--{{ o.status.toLowerCase() }}">{{ labels[o.status] }}</span>
+              <span class="order-row__total">{{ o.totalAmount | number: '1.0-2' }} lei</span>
+            </div>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</section>

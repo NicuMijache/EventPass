@@ -1,0 +1,86 @@
+<section class="container page">
+  <a class="back" routerLink="/comenzi">
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.5" />
+    </svg>
+    Comenzile mele
+  </a>
+
+  @if (loadError(); as message) {
+    <div class="message">
+      <p class="message__title">{{ message }}</p>
+      <a class="btn" routerLink="/comenzi">Vezi comenzile tale</a>
+    </div>
+  } @else if (order(); as o) {
+    <header class="order-head">
+      <p class="eyebrow">Comanda #{{ o.id }} · {{ o.createdAt | date: 'd MMM y, HH:mm' }}</p>
+      <h1 class="display order-head__title">
+        @switch (o.status) {
+          @case ('Pending') { Biletele sunt rezervate }
+          @case ('Paid') { Comanda e plătită }
+          @case ('Cancelled') { Comanda a fost anulată }
+          @default { {{ labels[o.status] }} }
+        }
+      </h1>
+      <span class="status status--{{ o.status.toLowerCase() }}">{{ labels[o.status] }}</span>
+    </header>
+
+    <div class="order-layout">
+      <div class="order-main">
+        <a class="order-event" [routerLink]="['/evenimente', o.event.id]">
+          <div class="order-event__poster">
+            @if (o.event.imageUrl) {
+              <img [src]="o.event.imageUrl" [alt]="'Poster ' + o.event.title" />
+            }
+          </div>
+          <div>
+            <p class="order-event__date">{{ o.event.startsAt | date: 'EEEE, d MMMM y · HH:mm' }}</p>
+            <p class="order-event__title">{{ o.event.title }}</p>
+            <p class="order-event__place">{{ o.event.venue }}, {{ o.event.city }}</p>
+          </div>
+        </a>
+
+        <ul class="lines">
+          @for (line of o.items; track line.ticketTypeId) {
+            <li class="line">
+              <span>{{ line.quantity }} × {{ line.ticketTypeName }}</span>
+              <span class="line__muted">{{ line.unitPrice | number: '1.0-2' }} lei / bilet</span>
+              <span class="line__total">{{ line.lineTotal | number: '1.0-2' }} lei</span>
+            </li>
+          }
+          <li class="line line--total">
+            <span>Total</span>
+            <span class="line__muted"></span>
+            <span class="line__total">{{ o.totalAmount | number: '1.0-2' }} lei</span>
+          </li>
+        </ul>
+      </div>
+
+      <aside class="order-side">
+        @if (o.status === 'Pending') {
+          <div class="timer" [class.timer--urgent]="secondsLeft() < 120">
+            <p class="timer__label">Locurile sunt păstrate încă</p>
+            <p class="timer__value" aria-live="off">{{ countdown() }}</p>
+          </div>
+
+          @if (actionError(); as message) {
+            <p class="form-alert" role="alert">{{ message }}</p>
+          }
+
+          <!-- Plata prin Stripe vine la #11 -->
+          <button class="btn btn--wide" type="button" disabled>Plătește – în curând</button>
+          <button class="btn btn--outline btn--wide" type="button" (click)="cancel()" [disabled]="cancelling()">
+            {{ cancelling() ? 'Se anulează…' : 'Anulează rezervarea' }}
+          </button>
+        } @else if (o.status === 'Cancelled') {
+          <p class="form-note">Locurile au fost eliberate. Poți rezerva din nou de pe pagina evenimentului.</p>
+          <a class="btn btn--wide" [routerLink]="['/evenimente', o.event.id]">Înapoi la eveniment</a>
+        } @else if (o.status === 'Paid') {
+          <p class="form-note">Biletele cu cod QR vin pe email.</p>
+        }
+      </aside>
+    </div>
+  } @else {
+    <p class="eyebrow">Se încarcă comanda…</p>
+  }
+</section>

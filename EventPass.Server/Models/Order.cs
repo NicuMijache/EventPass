@@ -17,6 +17,11 @@ public class Order
     public string? StripeSessionId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? PaidAt { get; set; }
+    // Până când sunt ținute locurile pentru o comandă Pending; după, comanda se anulează
+    public DateTime? ExpiresAt { get; set; }
+    public DateTime? CancelledAt { get; set; }
+
+    public bool IsExpired(DateTime now) => Status == OrderStatus.Pending && ExpiresAt <= now;
 
     public int UserId { get; set; }
     public User User { get; set; } = null!;

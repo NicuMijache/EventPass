@@ -1,6 +1,6 @@
 <header class="header">
   <div class="container header__inner">
-    <a class="logo" routerLink="/" (click)="closeMenu()" aria-label="EventPass – pagina principală">
+    <a class="logo" routerLink="/" (click)="closeMenus()" aria-label="EventPass – pagina principală">
       <!-- Bilet stilizat: dreptunghi cu o decupătură pe margine -->
       <svg class="logo__mark" viewBox="0 0 32 24" aria-hidden="true">
         <path d="M2 4a2 2 0 0 1 2-2h24a2 2 0 0 1 2 2v5a3 3 0 0 0 0 6v5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5a3 3 0 0 0 0-6Z"
@@ -12,18 +12,37 @@
 
     <nav class="nav" [class.nav--open]="menuOpen()" aria-label="Navigare principală">
       <a class="nav__link" routerLink="/" routerLinkActive="nav__link--active"
-         [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">Evenimente</a>
+         [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenus()">Evenimente</a>
     </nav>
 
     <div class="actions">
-      <!-- Autentificarea în interfață vine odată cu coșul (#10) -->
-      <span class="icon-button icon-button--disabled" title="Contul meu – în curând" aria-disabled="true">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.6" />
-          <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-        </svg>
-        <span class="visually-hidden">Contul meu (în curând)</span>
-      </span>
+      @if (auth.user(); as user) {
+        <div class="account">
+          <button class="avatar" type="button" (click)="toggleAccount()"
+                  [attr.aria-expanded]="accountOpen()" aria-haspopup="menu" [attr.aria-label]="'Contul meu: ' + user.fullName">
+            {{ initials() }}
+          </button>
+
+          @if (accountOpen()) {
+            <div class="account__menu" role="menu">
+              <div class="account__who">
+                <p class="account__name">{{ user.fullName }}</p>
+                <p class="account__email">{{ user.email }}</p>
+              </div>
+              <a class="account__item" routerLink="/comenzi" role="menuitem" (click)="closeMenus()">Comenzile mele</a>
+              <button class="account__item" type="button" role="menuitem" (click)="logout()">Ieși din cont</button>
+            </div>
+          }
+        </div>
+      } @else {
+        <a class="icon-button" routerLink="/login" (click)="closeMenus()" title="Intră în cont">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+          <span class="visually-hidden">Intră în cont</span>
+        </a>
+      }
 
       <button class="icon-button menu-button" type="button" (click)="toggleMenu()"
               [attr.aria-expanded]="menuOpen()" aria-label="Meniu">
