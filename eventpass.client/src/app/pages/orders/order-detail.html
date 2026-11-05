@@ -57,7 +57,18 @@
       </div>
 
       <aside class="order-side">
-        @if (o.status === 'Pending') {
+        @if (o.status === 'Pending' && plata() === 'succes') {
+          <!-- Întoarcerea de pe Stripe NU e dovada plății: confirmarea vine prin webhook (#12) -->
+          <div class="timer">
+            <p class="timer__label">Plata se confirmă…</p>
+            <p class="timer__hint">Am primit întoarcerea de la Stripe. Comanda devine „Plătit” imediat ce Stripe ne confirmă direct plata.</p>
+          </div>
+          <a class="btn btn--outline btn--wide" [routerLink]="['/comenzi', o.id]">Nu ai finalizat plata? Înapoi la comandă</a>
+        } @else if (o.status === 'Pending') {
+          @if (plata() === 'anulata') {
+            <p class="form-note">Plata nu a fost finalizată. Locurile sunt încă rezervate, poți încerca din nou.</p>
+          }
+
           <div class="timer" [class.timer--urgent]="secondsLeft() < 120">
             <p class="timer__label">Locurile sunt păstrate încă</p>
             <p class="timer__value" aria-live="off">{{ countdown() }}</p>
@@ -67,9 +78,21 @@
             <p class="form-alert" role="alert">{{ message }}</p>
           }
 
-          <!-- Plata prin Stripe vine la #11 -->
-          <button class="btn btn--wide" type="button" disabled>Plătește – în curând</button>
-          <button class="btn btn--outline btn--wide" type="button" (click)="cancel()" [disabled]="cancelling()">
+          @if (o.totalAmount === 0) {
+            <p class="form-note">Biletele sunt gratuite: confirmarea fără plată vine în curând.</p>
+          } @else {
+            <button class="btn btn--wide" type="button" (click)="pay()" [disabled]="paying()">
+              {{ paying() ? 'Te trimitem la plată…' : 'Plătește ' + (o.totalAmount | number: '1.0-2') + ' lei' }}
+            </button>
+            <p class="secure-note">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.5" />
+                <path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.5" />
+              </svg>
+              Plata securizată prin Stripe (mod test)
+            </p>
+          }
+          <button class="btn btn--outline btn--wide" type="button" (click)="cancel()" [disabled]="cancelling() || paying()">
             {{ cancelling() ? 'Se anulează…' : 'Anulează rezervarea' }}
           </button>
         } @else if (o.status === 'Cancelled') {
