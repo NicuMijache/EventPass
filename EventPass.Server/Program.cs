@@ -2,6 +2,7 @@ using System.Text;
 using EventPass.Server.Data;
 using EventPass.Server.Models;
 using EventPass.Server.Services;
+using EventPass.Server.Services.Payments;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,10 @@ builder.Services.Configure<JwtOptions>(jwtSection);
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddSingleton<IImageStorage, LocalImageStorage>();
 builder.Services.AddScoped<SeatReservationService>();
+
+// Plăți: cheia secretă Stripe vine din User Secrets (Stripe:SecretKey)
+builder.Services.Configure<StripeOptions>(builder.Configuration.GetSection("Stripe"));
+builder.Services.AddSingleton<IPaymentGateway, StripePaymentGateway>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services

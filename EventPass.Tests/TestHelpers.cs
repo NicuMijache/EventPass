@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using EventPass.Server.Data;
 using EventPass.Server.Services;
+using EventPass.Server.Services.Payments;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +28,33 @@ public class FakeImageStorage : IImageStorage
         if (!string.IsNullOrEmpty(publicPath))
             Deleted.Add(publicPath);
     }
+}
+
+// Stripe simulat: nu iese pe internet, doar ține minte ce i s-a cerut
+// și întoarce sesiuni inventate. Testul poate schimba starea unei sesiuni.
+public class FakePaymentGateway : IPaymentGateway
+{
+    public List<CheckoutRequest> Requests { get; } = new();
+    public Dictionary<string, CheckoutSession> Sessions { get; } = new();
+    public Exception? FailWith { get; set; }
+
+    public Task<CheckoutSession> CreateCheckoutSessionAsync(CheckoutRequest request, CancellationToken ct = default)
+    {
+        if (FailWith is not null)
+            throw FailWith;
+
+        Requests.Add(request);
+        var id = $"cs_test_{Requests.Count}";
+        var session = new CheckoutSession(id, $"https://checkout.stripe.test/{id}", CheckoutSessionStatus.Open, request.ExpiresAt);
+        Sessions[id] = session;
+        return Task.FromResult(session);
+    }
+
+    public Task<CheckoutSession?> GetCheckoutSessionAsync(string sessionId, CancellationToken ct = default) =>
+        Task.FromResult(Sessions.GetValueOrDefault(sessionId));
+
+    public void SetStatus(string sessionId, CheckoutSessionStatus status) =>
+        Sessions[sessionId] = Sessions[sessionId] with { Status = status };
 }
 
 public static class TestHelpers

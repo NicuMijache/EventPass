@@ -2,9 +2,11 @@ using EventPass.Server.Data;
 using EventPass.Server.Dtos;
 using EventPass.Server.Models;
 using EventPass.Server.Services;
+using EventPass.Server.Services.Payments;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace EventPass.Server.Controllers;
 
@@ -18,13 +20,24 @@ public class OrdersController : ControllerBase
     // Câte rezervări neplătite poate avea cineva odată (ca să nu blocheze tot stocul)
     public const int MaxPendingOrdersPerUser = 3;
 
+    // Stripe cere ca o sesiune de plată să fie valabilă cel puțin 30 de minute
+    public static readonly TimeSpan CheckoutSessionDuration = TimeSpan.FromMinutes(31);
+
     private readonly AppDbContext _db;
     private readonly SeatReservationService _seats;
+    private readonly IPaymentGateway _payments;
+    private readonly StripeOptions _stripe;
 
-    public OrdersController(AppDbContext db, SeatReservationService seats)
+    public OrdersController(
+        AppDbContext db,
+        SeatReservationService seats,
+        IPaymentGateway payments,
+        IOptions<StripeOptions> stripe)
     {
         _db = db;
         _seats = seats;
+        _payments = payments;
+        _stripe = stripe.Value;
     }
 
     [HttpPost]
@@ -145,6 +158,84 @@ public class OrdersController : ControllerBase
             return Conflict(new { message = "Doar o comandă neplătită poate fi anulată." });
 
         return Ok(ToDto(order));
+    }
+
+    // Pornește plata: creează (sau refolosește) o sesiune Stripe Checkout și întoarce adresa ei.
+    // ATENȚIE: întoarcerea clientului pe site NU înseamnă că a plătit. Comanda devine Paid
+    // doar când Stripe confirmă direct serverului, prin webhook (issue-ul #12).
+    [HttpPost("{id:int}/checkout")]
+    public async Task<ActionResult<CheckoutResponse>> Checkout(int id, CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        var order = await LoadOrderAsync(id, userId, ct);
+        if (order is null)
+            return NotFound();
+
+        await ExpireIfNeededAsync(order, ct);
+        if (order.Status == OrderStatus.Paid)
+            return Conflict(new { message = "Comanda este deja plătită." });
+        if (order.Status != OrderStatus.Pending)
+            return Conflict(new { message = "Rezervarea a expirat sau a fost anulată. Rezervă din nou biletele." });
+        if (order.TotalAmount == 0)
+            return BadRequest(new { message = "Comenzile gratuite nu trec prin plată; confirmarea lor vine în curând." });
+        if (order.TotalAmount < Money.MinimumChargeRon)
+            return BadRequest(new { message = $"Plata minimă acceptată este {Money.MinimumChargeRon} lei." });
+
+        try
+        {
+            // Dacă există deja o sesiune deschisă (a apăsat „Plătește” de două ori), o refolosim
+            if (order.StripeSessionId is not null)
+            {
+                var existing = await _payments.GetCheckoutSessionAsync(order.StripeSessionId, ct);
+                if (existing is { Status: CheckoutSessionStatus.Open })
+                    return Ok(new CheckoutResponse(existing.Url));
+                if (existing is { Status: CheckoutSessionStatus.Complete })
+                    return Conflict(new { message = "Plata a fost deja făcută și se confirmă." });
+            }
+
+            var email = await _db.Users.Where(u => u.Id == userId).Select(u => u.Email).SingleAsync(ct);
+            var orderUrl = $"{_stripe.ClientBaseUrl.TrimEnd('/')}/comenzi/{order.Id}";
+            var session = await _payments.CreateCheckoutSessionAsync(new CheckoutRequest(
+                order.Id,
+                email,
+                "ron",
+                order.Items
+                    .Select(i => new CheckoutLine(
+                        $"{i.TicketType.Event.Title} – {i.TicketType.Name}",
+                        Money.ToMinorUnits(i.UnitPrice),
+                        i.Quantity))
+                    .ToList(),
+                SuccessUrl: $"{orderUrl}?plata=succes",
+                CancelUrl: $"{orderUrl}?plata=anulata",
+                ExpiresAt: DateTime.UtcNow.Add(CheckoutSessionDuration)), ct);
+
+            // Salvăm sesiunea și prelungim rezervarea cât e valabilă plata,
+            // ca locurile să nu expire în timp ce clientul e pe pagina Stripe.
+            // Condiția Status == Pending: dacă între timp s-a anulat, nu o „reînviem”.
+            var updated = await _db.Orders
+                .Where(o => o.Id == order.Id && o.Status == OrderStatus.Pending)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(o => o.StripeSessionId, session.Id)
+                    .SetProperty(o => o.ExpiresAt, session.ExpiresAt), ct);
+            if (updated == 0)
+                return Conflict(new { message = "Rezervarea a expirat sau a fost anulată. Rezervă din nou biletele." });
+
+            // ExecuteUpdate scrie direct în baza de date; actualizăm și obiectul din memorie
+            order.StripeSessionId = session.Id;
+            order.ExpiresAt = session.ExpiresAt;
+
+            return Ok(new CheckoutResponse(session.Url));
+        }
+        catch (PaymentsNotConfiguredException)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                new { message = "Plățile nu sunt configurate pe server (lipsește cheia Stripe)." });
+        }
+        catch (PaymentGatewayException)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway,
+                new { message = "Nu am putut contacta procesatorul de plăți. Încearcă din nou." });
+        }
     }
 
     // O rezervare expirată se anulează când cineva se uită la ea. Comenzile pe care

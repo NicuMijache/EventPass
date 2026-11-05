@@ -11,6 +11,9 @@ public record OrderEventDto(int Id, string Title, string Venue, string City, Dat
 
 public record OrderLineDto(int TicketTypeId, string TicketTypeName, int Quantity, decimal UnitPrice, decimal LineTotal);
 
+// Adresa paginii de plată Stripe, unde frontend-ul trimite browserul
+public record CheckoutResponse(string Url);
+
 public record OrderDto(
     int Id,
     string Status,

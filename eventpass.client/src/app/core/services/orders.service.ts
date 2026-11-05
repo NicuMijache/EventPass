@@ -20,6 +20,11 @@ export class OrdersService {
     return this.http.get<Order>(`/api/orders/${id}`);
   }
 
+  // Cere serverului o sesiune de plată Stripe și primește adresa paginii de plată
+  checkout(id: number): Observable<{ url: string }> {
+    return this.http.post<{ url: string }>(`/api/orders/${id}/checkout`, {});
+  }
+
   cancel(id: number): Observable<Order> {
     return this.http.post<Order>(`/api/orders/${id}/cancel`, {});
   }

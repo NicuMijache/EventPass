@@ -3,14 +3,18 @@ using EventPass.Server.Data;
 using EventPass.Server.Dtos;
 using EventPass.Server.Models;
 using EventPass.Server.Services;
+using EventPass.Server.Services.Payments;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace EventPass.Tests;
 
 public class OrdersControllerTests : IDisposable
 {
     private readonly SqliteTestDatabase _database = new();
+    // Stripe simulat, comun tuturor „cererilor” dintr-un test
+    private readonly FakePaymentGateway _payments = new();
 
     // Clienții 1 și 2, organizatorul 3.
     // Evenimentul 10 (publicat): 100 „Standard” 50 lei, 10 locuri | 101 „VIP” 200 lei, 2 locuri, 1 vândut.
@@ -43,7 +47,11 @@ public class OrdersControllerTests : IDisposable
     private (AppDbContext Db, OrdersController Controller) As(int userId)
     {
         var db = _database.CreateContext();
-        var controller = new OrdersController(db, new SeatReservationService(db));
+        var controller = new OrdersController(
+            db,
+            new SeatReservationService(db),
+            _payments,
+            Options.Create(new StripeOptions { ClientBaseUrl = "http://localhost:4200" }));
         TestHelpers.LoginAs(controller, userId, "Client");
         return (db, controller);
     }
@@ -259,5 +267,150 @@ public class OrdersControllerTests : IDisposable
 
         var orders = Assert.IsType<List<OrderDto>>(Assert.IsType<OkObjectResult>(result.Result).Value);
         Assert.Equal(anaOrder.Id, Assert.Single(orders).Id);
+    }
+
+    // ---- Plata (Stripe Checkout) ----
+
+    private static string CheckoutUrl(ActionResult<CheckoutResponse> result) =>
+        Assert.IsType<CheckoutResponse>(Assert.IsType<OkObjectResult>(result.Result).Value).Url;
+
+    private Order LoadOrder(int id)
+    {
+        using var db = _database.CreateContext();
+        return db.Orders.Single(o => o.Id == id);
+    }
+
+    [Fact]
+    public async Task Checkout_TrimiteLaStripeSumeleInBaniSiEmailulClientului()
+    {
+        var (db, controller) = As(1);
+        using var _ = db;
+        var order = Created(await controller.Create(Request(10, (100, 2), (101, 1)), default));
+
+        var url = CheckoutUrl(await controller.Checkout(order.Id, default));
+
+        var request = Assert.Single(_payments.Requests);
+        Assert.Equal("ana@example.com", request.CustomerEmail);
+        Assert.Equal("ron", request.Currency);
+        // 50 lei = 5000 bani, 200 lei = 20000 bani
+        Assert.Contains(request.Lines, l => l.Name == "Concert – Standard" && l.UnitAmountMinor == 5000 && l.Quantity == 2);
+        Assert.Contains(request.Lines, l => l.Name == "Concert – VIP" && l.UnitAmountMinor == 20000 && l.Quantity == 1);
+        Assert.EndsWith($"/comenzi/{order.Id}?plata=succes", request.SuccessUrl);
+        Assert.StartsWith("https://checkout.stripe.test/", url);
+    }
+
+    [Fact]
+    public async Task Checkout_SalveazaSesiuneaSiPrelungesteRezervareaCatTinePlata()
+    {
+        var (db, controller) = As(1);
+        using var _ = db;
+        var order = Created(await controller.Create(Request(10, (100, 1)), default));
+
+        await controller.Checkout(order.Id, default);
+
+        var saved = LoadOrder(order.Id);
+        Assert.Equal("cs_test_1", saved.StripeSessionId);
+        // 15 minute rezervare → prelungită la ~31 de minute, cât e valabilă sesiunea Stripe
+        Assert.True(saved.ExpiresAt > DateTime.UtcNow.AddMinutes(30));
+        Assert.Equal(OrderStatus.Pending, saved.Status); // plătită devine abia prin webhook (#12)
+    }
+
+    [Fact]
+    public async Task Checkout_DeDouaOri_RefolosesteSesiuneaDeschisa()
+    {
+        var (db, controller) = As(1);
+        using var _ = db;
+        var order = Created(await controller.Create(Request(10, (100, 1)), default));
+
+        var first = CheckoutUrl(await controller.Checkout(order.Id, default));
+        var second = CheckoutUrl(await controller.Checkout(order.Id, default));
+
+        Assert.Equal(first, second);
+        Assert.Single(_payments.Requests);
+    }
+
+    [Fact]
+    public async Task Checkout_SesiuneaVecheAExpirat_CreeazaUnaNoua()
+    {
+        var (db, controller) = As(1);
+        using var _ = db;
+        var order = Created(await controller.Create(Request(10, (100, 1)), default));
+        await controller.Checkout(order.Id, default);
+        _payments.SetStatus("cs_test_1", CheckoutSessionStatus.Expired);
+
+        await controller.Checkout(order.Id, default);
+
+        Assert.Equal(2, _payments.Requests.Count);
+        Assert.Equal("cs_test_2", LoadOrder(order.Id).StripeSessionId);
+    }
+
+    [Fact]
+    public async Task Checkout_ComandaAnulata_Returneaza409SiNuContacteazaStripe()
+    {
+        var (db, controller) = As(1);
+        using var _ = db;
+        var order = Created(await controller.Create(Request(10, (100, 1)), default));
+        await controller.Cancel(order.Id, default);
+
+        var result = await controller.Checkout(order.Id, default);
+
+        Assert.IsType<ConflictObjectResult>(result.Result);
+        Assert.Empty(_payments.Requests);
+    }
+
+    [Fact]
+    public async Task Checkout_ComandaAltcuiva_Returneaza404()
+    {
+        var (dbAna, ana) = As(1);
+        var (dbIon, ion) = As(2);
+        using var _ = dbAna;
+        using var __ = dbIon;
+        var order = Created(await ana.Create(Request(10, (100, 1)), default));
+
+        var result = await ion.Checkout(order.Id, default);
+
+        Assert.IsType<NotFoundResult>(result.Result);
+        Assert.Empty(_payments.Requests);
+    }
+
+    [Fact]
+    public async Task Checkout_ComandaGratuita_NuTrecePrinStripe()
+    {
+        using (var setup = _database.CreateContext())
+        {
+            setup.TicketTypes.Add(new TicketType { Id = 102, EventId = 10, Name = "Invitație", Price = 0, Capacity = 5 });
+            setup.SaveChanges();
+        }
+        var (db, controller) = As(1);
+        using var _ = db;
+        var order = Created(await controller.Create(Request(10, (102, 1)), default));
+
+        var result = await controller.Checkout(order.Id, default);
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Empty(_payments.Requests);
+    }
+
+    [Fact]
+    public async Task Checkout_FaraCheieStripe_Returneaza503()
+    {
+        var (db, controller) = As(1);
+        using var _ = db;
+        var order = Created(await controller.Create(Request(10, (100, 1)), default));
+        _payments.FailWith = new PaymentsNotConfiguredException();
+
+        var result = await controller.Checkout(order.Id, default);
+
+        Assert.Equal(503, Assert.IsType<ObjectResult>(result.Result).StatusCode);
+    }
+
+    [Theory]
+    [InlineData(90, 9000)]
+    [InlineData(90.5, 9050)]
+    [InlineData(0.01, 1)]
+    [InlineData(19.999, 2000)]
+    public void ToMinorUnits_TransformaLeiInBani(decimal lei, long bani)
+    {
+        Assert.Equal(bani, Money.ToMinorUnits(lei));
     }
 }

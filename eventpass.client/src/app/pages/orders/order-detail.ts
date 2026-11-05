@@ -16,11 +16,14 @@ export class OrderDetail {
   private readonly ordersService = inject(OrdersService);
 
   readonly id = input.required<string>();
+  // Pus de Stripe în adresă la întoarcere: „succes” sau „anulata”
+  readonly plata = input<string>();
 
   protected readonly order = signal<Order | null>(null);
   protected readonly loadError = signal<string | null>(null);
   protected readonly actionError = signal<string | null>(null);
   protected readonly cancelling = signal(false);
+  protected readonly paying = signal(false);
   protected readonly labels = ORDER_STATUS_LABELS;
 
   // „Acum”, actualizat în fiecare secundă pentru numărătoarea inversă
@@ -53,6 +56,21 @@ export class OrderDetail {
         this.refreshedAfterExpiry = true;
         this.load(o.id);
       }
+    });
+  }
+
+  // Serverul creează sesiunea Stripe; noi doar trimitem browserul pe pagina de plată
+  protected pay(): void {
+    const o = this.order();
+    if (!o) return;
+    this.paying.set(true);
+    this.actionError.set(null);
+    this.ordersService.checkout(o.id).subscribe({
+      next: ({ url }) => window.location.assign(url),
+      error: (err) => {
+        this.actionError.set(errorMessage(err, 'Nu am putut porni plata. Încearcă din nou.'));
+        this.paying.set(false);
+      },
     });
   }
 
