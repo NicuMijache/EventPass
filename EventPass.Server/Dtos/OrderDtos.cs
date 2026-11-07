@@ -11,6 +11,9 @@ public record OrderEventDto(int Id, string Title, string Venue, string City, Dat
 
 public record OrderLineDto(int TicketTypeId, string TicketTypeName, int Quantity, decimal UnitPrice, decimal LineTotal);
 
+// Un bilet emis după plată. Token-ul e cel din codul QR; îl vede doar proprietarul comenzii.
+public record TicketDto(int Id, Guid Token, string TicketTypeName, bool IsUsed);
+
 // Adresa paginii de plată Stripe, unde frontend-ul trimite browserul
 public record CheckoutResponse(string Url);
 
@@ -22,4 +25,5 @@ public record OrderDto(
     DateTime? ExpiresAt,
     DateTime? PaidAt,
     OrderEventDto Event,
-    List<OrderLineDto> Items);
+    List<OrderLineDto> Items,
+    List<TicketDto> Tickets);

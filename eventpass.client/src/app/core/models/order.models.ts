@@ -29,6 +29,14 @@ export interface OrderLine {
   lineTotal: number;
 }
 
+// Un bilet emis după plată; token-ul va fi în codul QR
+export interface Ticket {
+  id: number;
+  token: string;
+  ticketTypeName: string;
+  isUsed: boolean;
+}
+
 export interface Order {
   id: number;
   status: OrderStatus;
@@ -38,6 +46,7 @@ export interface Order {
   paidAt: string | null;
   event: OrderEvent;
   items: OrderLine[];
+  tickets: Ticket[];
 }
 
 // Textele afișate pentru fiecare stare

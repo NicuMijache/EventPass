@@ -31,6 +31,7 @@ builder.Services.AddScoped<SeatReservationService>();
 // Plăți: cheia secretă Stripe vine din User Secrets (Stripe:SecretKey)
 builder.Services.Configure<StripeOptions>(builder.Configuration.GetSection("Stripe"));
 builder.Services.AddSingleton<IPaymentGateway, StripePaymentGateway>();
+builder.Services.AddScoped<OrderPaymentService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services
