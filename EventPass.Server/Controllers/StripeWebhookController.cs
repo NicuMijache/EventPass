@@ -1,4 +1,5 @@
 using System.Text.Json;
+using EventPass.Server.Services.Email;
 using EventPass.Server.Services.Payments;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -14,15 +15,18 @@ namespace EventPass.Server.Controllers;
 public class StripeWebhookController : ControllerBase
 {
     private readonly OrderPaymentService _payments;
+    private readonly ITicketEmailSignal _emails;
     private readonly StripeOptions _options;
     private readonly ILogger<StripeWebhookController> _logger;
 
     public StripeWebhookController(
         OrderPaymentService payments,
+        ITicketEmailSignal emails,
         IOptions<StripeOptions> options,
         ILogger<StripeWebhookController> logger)
     {
         _payments = payments;
+        _emails = emails;
         _options = options.Value;
         _logger = logger;
     }
@@ -79,6 +83,11 @@ public class StripeWebhookController : ControllerBase
         // (de aceea procesarea trebuie să fie idempotentă)
         var result = await _payments.ConfirmPaymentAsync(
             orderId, session.Id, session.AmountTotal ?? 0, session.Currency ?? string.Empty, ct);
+
+        // Trezim procesul care trimite emailul cu biletele. Nu așteptăm trimiterea: webhook-ul răspunde imediat.
+        // La AlreadyPaid anunțăm și el (mesaj repetat): dacă anunțul anterior s-ar fi pierdut, nu rămâne comanda netrimisă.
+        if (result is PaymentConfirmation.Paid or PaymentConfirmation.AlreadyPaid)
+            _emails.Notify();
 
         _logger.LogInformation("Webhook {EventId} pentru comanda {OrderId}: {Result}.", stripeEvent.Id, orderId, result);
         return Ok();

@@ -21,6 +21,12 @@ public class Order
     public DateTime? ExpiresAt { get; set; }
     public DateTime? CancelledAt { get; set; }
 
+    // Trimiterea biletelor pe email. Starea stă în baza de date (nu în memorie), ca după o repornire
+    // a aplicației să se știe ce a rămas de trimis. Pentru „retrimitere” (#21) se resetează TicketsEmailedAt la null.
+    public DateTime? TicketsEmailedAt { get; set; }
+    public int TicketsEmailAttempts { get; set; }
+    public DateTime? TicketsEmailLastAttemptAt { get; set; }
+
     public bool IsExpired(DateTime now) => Status == OrderStatus.Pending && ExpiresAt <= now;
 
     public int UserId { get; set; }

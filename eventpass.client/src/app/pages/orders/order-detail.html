@@ -136,7 +136,9 @@
           <p class="form-note">Locurile au fost eliberate. Poți rezerva din nou de pe pagina evenimentului.</p>
           <a class="btn btn--wide" [routerLink]="['/evenimente', o.event.id]">Înapoi la eveniment</a>
         } @else if (o.status === 'Paid') {
-          <p class="form-note">Plata a fost confirmată{{ o.paidAt ? ' pe ' + (o.paidAt | date: 'd MMM y, HH:mm') : '' }}. Arată codul QR de pe telefon la intrare sau descarcă-l.</p>
+          <p class="form-note">Plata a fost confirmată{{ o.paidAt ? ' pe ' + (o.paidAt | date: 'd MMM y, HH:mm') : '' }}.
+            {{ o.ticketsEmailedAt ? 'Am trimis biletele și pe email.' : 'Biletele ajung și pe email în câteva clipe.' }}
+            Arată codul QR de pe telefon la intrare.</p>
         }
       </aside>
     </div>

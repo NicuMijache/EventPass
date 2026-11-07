@@ -2,6 +2,7 @@ using System.Text;
 using EventPass.Server.Data;
 using EventPass.Server.Models;
 using EventPass.Server.Services;
+using EventPass.Server.Services.Email;
 using EventPass.Server.Services.Payments;
 using EventPass.Server.Services.Qr;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -34,6 +35,16 @@ builder.Services.Configure<StripeOptions>(builder.Configuration.GetSection("Stri
 builder.Services.AddSingleton<IPaymentGateway, StripePaymentGateway>();
 builder.Services.AddScoped<OrderPaymentService>();
 builder.Services.AddSingleton<IQrCodeGenerator, QrCodeGenerator>();
+
+// Email: serverul SMTP (în dezvoltare, smtp4dev) se configurează în secțiunea „Smtp”
+builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
+builder.Services.Configure<ClientOptions>(builder.Configuration.GetSection("Client"));
+builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+builder.Services.AddSingleton<TicketEmailBuilder>();
+builder.Services.AddScoped<TicketEmailService>();
+builder.Services.AddSingleton<TicketEmailSignal>();
+builder.Services.AddSingleton<ITicketEmailSignal>(sp => sp.GetRequiredService<TicketEmailSignal>());
+builder.Services.AddHostedService<TicketEmailWorker>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 builder.Services

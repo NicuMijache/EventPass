@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using EventPass.Server.Controllers;
 using EventPass.Server.Models;
+using EventPass.Server.Services.Email;
 using EventPass.Server.Services.Payments;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,7 @@ public class StripeWebhookControllerTests : IDisposable
     private const string Secret = "whsec_secret_de_test";
 
     private readonly SqliteTestDatabase _database = new();
+    private readonly FakeTicketEmailSignal _emailSignal = new();
 
     public StripeWebhookControllerTests() => Seed(_database);
 
@@ -66,6 +68,7 @@ public class StripeWebhookControllerTests : IDisposable
         var db = _database.CreateContext();
         var controller = new StripeWebhookController(
             new OrderPaymentService(db, NullLogger<OrderPaymentService>.Instance),
+            _emailSignal,
             Options.Create(new StripeOptions { WebhookSecret = webhookSecret }),
             NullLogger<StripeWebhookController>.Instance);
 
@@ -99,6 +102,47 @@ public class StripeWebhookControllerTests : IDisposable
         Assert.IsType<OkResult>(result);
         Assert.Equal(OrderStatus.Paid, LoadOrder().Status);
         Assert.Equal(3, TicketCount());
+    }
+
+    [Fact]
+    public async Task Receive_PlataConfirmata_TrezesteProcesulCareTrimiteEmailul()
+    {
+        var payload = EventJson();
+
+        await CreateController(payload, Sign(payload, Secret)).Receive(default);
+
+        Assert.Equal(1, _emailSignal.Notifications);
+    }
+
+    [Fact]
+    public async Task Receive_MesajRepetat_AnuntaDinNouCaSaNuRamanaNetrimis()
+    {
+        var payload = EventJson();
+
+        await CreateController(payload, Sign(payload, Secret)).Receive(default);
+        await CreateController(payload, Sign(payload, Secret)).Receive(default);
+
+        Assert.Equal(2, _emailSignal.Notifications);
+    }
+
+    [Fact]
+    public async Task Receive_SemnaturaFalsa_NuTrezesteProcesul()
+    {
+        var payload = EventJson();
+
+        await CreateController(payload, Sign(payload, "whsec_alt_secret")).Receive(default);
+
+        Assert.Equal(0, _emailSignal.Notifications);
+    }
+
+    [Fact]
+    public async Task Receive_SumaGresita_NuTrezesteProcesul()
+    {
+        var payload = EventJson(amount: 100);
+
+        await CreateController(payload, Sign(payload, Secret)).Receive(default);
+
+        Assert.Equal(0, _emailSignal.Notifications);
     }
 
     [Fact]

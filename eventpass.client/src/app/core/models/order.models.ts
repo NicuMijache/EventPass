@@ -47,6 +47,8 @@ export interface Order {
   event: OrderEvent;
   items: OrderLine[];
   tickets: Ticket[];
+  // Când s-au trimis biletele pe email (null = încă nu)
+  ticketsEmailedAt: string | null;
 }
 
 // Textele afișate pentru fiecare stare

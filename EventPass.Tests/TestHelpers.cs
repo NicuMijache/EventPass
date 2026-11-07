@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using EventPass.Server.Data;
 using EventPass.Server.Services;
+using EventPass.Server.Services.Email;
 using EventPass.Server.Services.Payments;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +29,30 @@ public class FakeImageStorage : IImageStorage
         if (!string.IsNullOrEmpty(publicPath))
             Deleted.Add(publicPath);
     }
+}
+
+// Serviciul de email simulat: ține minte ce i s-a cerut să trimită; testul poate cere să „pice”
+public class FakeEmailSender : IEmailSender
+{
+    public List<EmailMessage> Sent { get; } = new();
+    // Dacă întoarce o excepție pentru un mesaj, trimiterea acelui mesaj eșuează
+    public Func<EmailMessage, Exception?>? FailWhen { get; set; }
+
+    public Task SendAsync(EmailMessage message, CancellationToken ct = default)
+    {
+        var failure = FailWhen?.Invoke(message);
+        if (failure is not null)
+            throw failure;
+        Sent.Add(message);
+        return Task.CompletedTask;
+    }
+}
+
+// Semnalul către procesul de email, simulat: doar numără câte anunțuri au venit
+public class FakeTicketEmailSignal : ITicketEmailSignal
+{
+    public int Notifications { get; private set; }
+    public void Notify() => Notifications++;
 }
 
 // Stripe simulat: nu iese pe internet, doar ține minte ce i s-a cerut
