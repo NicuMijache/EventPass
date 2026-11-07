@@ -19,7 +19,7 @@ Platformă web de vânzare a biletelor la evenimente cu plată online (Stripe) �
 | Bază de date | PostgreSQL |
 | Plăți | Stripe (Checkout + Webhooks, mod test), `Stripe.net` |
 | Cod QR | `QRCoder` (generare), `html5-qrcode` (scanare) |
-| Email | `MailKit` + SMTP (Mailtrap / Papercut în dezvoltare) |
+| Email | `MailKit` + SMTP (în dezvoltare: `smtp4dev`, server SMTP de test) |
 | API | Swagger / OpenAPI |
 | Teste | xUnit |
 | CI | GitHub Actions |
@@ -32,15 +32,18 @@ Platformă web de vânzare a biletelor la evenimente cu plată online (Stripe) �
 - PostgreSQL (local sau Docker)
 - Git, `dotnet-ef`
 - Cont Stripe în mod test + Stripe CLI (pentru webhook-uri locale)
-- Mailtrap sau Papercut pentru emailuri de test
+- `smtp4dev` pentru emailuri de test (unealtă locală a proiectului, se instalează cu `dotnet tool restore`)
 
 ## Rulare
 1. `git clone` al repository-ului
 2. În folderul clientului: `npm install`
-3. Setează secretele (User Secrets): șirul de conexiune la baza de date, cheia JWT, `Stripe:SecretKey`, `Stripe:WebhookSecret`, parola SMTP
-4. `dotnet ef database update`
-5. Pornește webhook-urile locale: `stripe listen --forward-to https://localhost:<port>/api/webhooks/stripe`
-6. Deschide soluția în Visual Studio și apasă F5
+3. Setează secretele (User Secrets): șirul de conexiune la baza de date, `Jwt:Key`, `SeedAdmin:Email` și `SeedAdmin:Password`, `Stripe:SecretKey`, `Stripe:WebhookSecret` (pentru un server SMTP real: și `Smtp:Username`, `Smtp:Password`)
+4. `dotnet ef database update --project EventPass.Server`
+5. Pornește serverul SMTP de test (emailurile se văd în browser, la http://localhost:5025):
+   `dotnet tool restore` apoi `dotnet tool run smtp4dev -- --smtpport=2525 --urls=http://localhost:5025 --db="" --nousersettings`
+6. Pornește webhook-urile locale: `stripe listen --forward-to http://localhost:5003/api/webhooks/stripe`
+   (secretul `whsec_...` pentru `Stripe:WebhookSecret` îl afișează `stripe listen --print-secret`)
+7. Pornește API-ul (`dotnet run --project EventPass.Server --launch-profile http`) și clientul (`cd eventpass.client`, `npm start`), apoi deschide http://localhost:4200
 
 Carduri de test Stripe: `4242 4242 4242 4242` (succes), orice dată viitoare și orice CVC.
 

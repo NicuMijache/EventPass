@@ -104,6 +104,15 @@ namespace EventPass.Server.Data.Migrations
                     b.Property<string>("StripeSessionId")
                         .HasColumnType("text");
 
+                    b.Property<int>("TicketsEmailAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("TicketsEmailLastAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("TicketsEmailedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)");

@@ -26,4 +26,6 @@ public record OrderDto(
     DateTime? PaidAt,
     OrderEventDto Event,
     List<OrderLineDto> Items,
-    List<TicketDto> Tickets);
+    List<TicketDto> Tickets,
+    // Când s-au trimis biletele pe email (null = încă nu)
+    DateTime? TicketsEmailedAt);

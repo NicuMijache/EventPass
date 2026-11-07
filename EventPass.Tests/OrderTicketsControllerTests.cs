@@ -1,6 +1,7 @@
 using EventPass.Server.Controllers;
 using EventPass.Server.Data;
 using EventPass.Server.Models;
+using EventPass.Server.Services;
 using EventPass.Server.Services.Payments;
 using EventPass.Server.Services.Qr;
 using Microsoft.AspNetCore.Http;
@@ -63,16 +64,16 @@ public class OrderTicketsControllerTests : IDisposable
         var file = Assert.IsType<FileContentResult>(result);
         Assert.Equal("image/png", file.ContentType);
         // Cap-coadă: scanăm imaginea primită și ar trebui să dea exact tokenul din baza de date
-        Assert.Equal(OrderTicketsController.TokenToQrText(ticket.Token), QrCodeGeneratorTests.Decode(file.FileContents));
+        Assert.Equal(TicketCode.QrText(ticket.Token), QrCodeGeneratorTests.Decode(file.FileContents));
         Assert.Equal(ticket.Token.ToString("D").ToUpperInvariant(), QrCodeGeneratorTests.Decode(file.FileContents));
     }
 
     [Fact]
-    public void TokenToQrText_SeParseazaInapoiCuGuidTryParse_IndiferentDeMajuscule()
+    public void QrText_SeParseazaInapoiCuGuidTryParse_IndiferentDeMajuscule()
     {
         var token = Guid.NewGuid();
 
-        var text = OrderTicketsController.TokenToQrText(token);
+        var text = TicketCode.QrText(token);
 
         Assert.Equal(text, text.ToUpperInvariant());
         Assert.True(Guid.TryParse(text, out var parsed));

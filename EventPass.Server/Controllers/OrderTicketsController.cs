@@ -23,12 +23,6 @@ public class OrderTicketsController : ControllerBase
         _qr = qr;
     }
 
-    // Textul din QR e tokenul cu MAJUSCULE (ex. 3F2A9C1B-7D4E-...). Cifre, litere mari și „-” intră în modul
-    // „alfanumeric” al QR-ului, mai compact decât cel pe octeți: codul iese mai mic (37 în loc de 41 de module),
-    // cu pătrățele mai mari, deci mai ușor de scanat. La scanare, serverul parsează tokenul cu Guid.TryParse,
-    // care acceptă și majuscule, și litere mici.
-    public static string TokenToQrText(Guid token) => token.ToString("D").ToUpperInvariant();
-
     // Imaginea QR a unui bilet. Nu o păstrăm nicăieri: o calculăm din token de fiecare dată.
     [HttpGet("{ticketId:int}/qr")]
     [Produces("image/png")]
@@ -58,7 +52,7 @@ public class OrderTicketsController : ControllerBase
         if (order.Status != OrderStatus.Paid)
             return Conflict(new { message = "Codul QR este disponibil doar pentru comenzile plătite." });
 
-        var png = _qr.GeneratePng(TokenToQrText(token.Value), Math.Clamp(size, 1, QrCodeGenerator.MaxPixelsPerModule));
+        var png = _qr.GeneratePng(TicketCode.QrText(token.Value), Math.Clamp(size, 1, QrCodeGenerator.MaxPixelsPerModule));
 
         // Conține un secret (tokenul): nu vrem să rămână în memoria cache a browserului sau a unui proxy
         Response.Headers.CacheControl = "private, no-store";

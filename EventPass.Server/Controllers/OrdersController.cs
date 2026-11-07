@@ -278,6 +278,7 @@ public class OrdersController : ControllerBase
                     t.Token,
                     order.Items.First(i => i.TicketTypeId == t.TicketTypeId).TicketType.Name,
                     t.IsUsed))
-                .ToList());
+                .ToList(),
+            order.TicketsEmailedAt);
     }
 }
