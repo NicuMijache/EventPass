@@ -2,13 +2,14 @@ import { Component, computed, DestroyRef, effect, inject, input, signal } from '
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { OrdersService } from '../../core/services/orders.service';
+import { TicketQr } from '../../components/ticket-qr/ticket-qr';
 import { errorMessage } from '../../core/http-errors';
 import { Order, ORDER_STATUS_LABELS } from '../../core/models/order.models';
 
 // Pagina unei comenzi: ce ai rezervat, cât costă și cât timp mai ai până expiră rezervarea
 @Component({
   selector: 'app-order-detail',
-  imports: [RouterLink, DatePipe, DecimalPipe],
+  imports: [RouterLink, DatePipe, DecimalPipe, TicketQr],
   templateUrl: './order-detail.html',
   styleUrl: './orders.scss',
 })

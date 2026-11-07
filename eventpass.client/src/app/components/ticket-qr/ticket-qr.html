@@ -1,0 +1,19 @@
+<div class="qr" [attr.aria-busy]="state() === 'loading'">
+  @switch (state()) {
+    @case ('ready') {
+      <img class="qr__image" [src]="imageUrl()" [alt]="alt()" width="148" height="148" />
+      <a class="qr__download" [href]="imageUrl()" [download]="fileName()">Descarcă</a>
+    }
+    @case ('error') {
+      <div class="qr__box qr__box--error">
+        <p class="qr__message">Codul nu s-a încărcat.</p>
+        <button class="qr__retry" type="button" (click)="retry()">Încearcă din nou</button>
+      </div>
+    }
+    @default {
+      <div class="qr__box qr__box--loading" role="status">
+        <span class="visually-hidden">Se încarcă codul QR…</span>
+      </div>
+    }
+  }
+</div>

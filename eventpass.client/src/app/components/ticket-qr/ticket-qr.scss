@@ -1,0 +1,77 @@
+:host {
+  display: block;
+}
+
+.qr {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  width: 148px;
+}
+
+// Alb pur în jurul codului: scannerul are nevoie de „zona liniștită” albă din jur,
+// iar imaginea o conține deja (4 module); rama doar o delimitează vizual
+.qr__image {
+  display: block;
+  width: 148px;
+  height: 148px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  // Pătrățele clare, fără estompare când browserul micșorează imaginea
+  image-rendering: pixelated;
+}
+
+.qr__box {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: var(--space-2);
+  width: 148px;
+  height: 148px;
+  padding: var(--space-3);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.qr__box--loading {
+  border-style: solid;
+  border-color: var(--color-border);
+  background: linear-gradient(90deg, var(--color-surface) 0%, #ececea 50%, var(--color-surface) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.qr__message {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.qr__retry {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  font-size: var(--text-xs);
+}
+
+.qr__download {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+
+  &:hover {
+    color: var(--color-text);
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
