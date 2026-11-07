@@ -54,16 +54,45 @@
             <span class="line__total">{{ o.totalAmount | number: '1.0-2' }} lei</span>
           </li>
         </ul>
+
+        @if (o.status === 'Paid' && o.tickets.length) {
+          <section class="tickets" aria-labelledby="tickets-title">
+            <h2 id="tickets-title" class="tickets__title">Biletele tale</h2>
+            <ul class="ticket-list">
+              @for (ticket of o.tickets; track ticket.id; let i = $index) {
+                <li class="ticket-card" [class.ticket-card--used]="ticket.isUsed">
+                  <div>
+                    <p class="ticket-card__name">{{ ticket.ticketTypeName }}</p>
+                    <p class="ticket-card__meta">Bilet {{ i + 1 }} din {{ o.tickets.length }}</p>
+                  </div>
+                  <div class="ticket-card__code">
+                    <span class="ticket-card__label">Cod</span>
+                    <span class="ticket-card__value">{{ shortCode(ticket.token) }}</span>
+                  </div>
+                </li>
+              }
+            </ul>
+          </section>
+        }
       </div>
 
       <aside class="order-side">
         @if (o.status === 'Pending' && plata() === 'succes') {
-          <!-- Întoarcerea de pe Stripe NU e dovada plății: confirmarea vine prin webhook (#12) -->
-          <div class="timer">
-            <p class="timer__label">Plata se confirmă…</p>
-            <p class="timer__hint">Am primit întoarcerea de la Stripe. Comanda devine „Plătit” imediat ce Stripe ne confirmă direct plata.</p>
+          <!-- Întoarcerea de pe Stripe NU e dovada plății: confirmarea vine prin webhook,
+               iar noi doar întrebăm serverul din când în când (polling) -->
+          <div class="timer" aria-live="polite">
+            @if (confirmationDelayed()) {
+              <p class="timer__label">Confirmarea durează mai mult decât de obicei</p>
+              <p class="timer__hint">Dacă ai plătit, biletele apar aici imediat ce Stripe ne confirmă plata. Poți verifica din nou sau reveni mai târziu din „Comenzile mele”.</p>
+            } @else {
+              <p class="timer__label">Plata se confirmă…</p>
+              <p class="timer__hint">Așteptăm confirmarea de la Stripe. Pagina se actualizează singură.</p>
+            }
           </div>
-          <a class="btn btn--outline btn--wide" [routerLink]="['/comenzi', o.id]">Nu ai finalizat plata? Înapoi la comandă</a>
+          @if (confirmationDelayed()) {
+            <button class="btn btn--wide" type="button" (click)="checkAgain()">Verifică din nou</button>
+          }
+          <a class="btn btn--outline btn--wide" [routerLink]="['/comenzi', o.id]">Nu ai finalizat plata? Înapoi</a>
         } @else if (o.status === 'Pending') {
           @if (plata() === 'anulata') {
             <p class="form-note">Plata nu a fost finalizată. Locurile sunt încă rezervate, poți încerca din nou.</p>
@@ -99,7 +128,7 @@
           <p class="form-note">Locurile au fost eliberate. Poți rezerva din nou de pe pagina evenimentului.</p>
           <a class="btn btn--wide" [routerLink]="['/evenimente', o.event.id]">Înapoi la eveniment</a>
         } @else if (o.status === 'Paid') {
-          <p class="form-note">Biletele cu cod QR vin pe email.</p>
+          <p class="form-note">Plata a fost confirmată{{ o.paidAt ? ' pe ' + (o.paidAt | date: 'd MMM y, HH:mm') : '' }}. Biletele cu cod QR vin pe email.</p>
         }
       </aside>
     </div>

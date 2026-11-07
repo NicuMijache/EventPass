@@ -247,6 +247,7 @@ public class OrdersController : ControllerBase
     }
 
     private IQueryable<Order> OrdersQuery() => _db.Orders
+        .Include(o => o.Tickets)
         .Include(o => o.Items)
             .ThenInclude(i => i.TicketType)
                 .ThenInclude(t => t.Event);
@@ -268,6 +269,15 @@ public class OrdersController : ControllerBase
             order.Items
                 .OrderBy(i => i.UnitPrice)
                 .Select(i => new OrderLineDto(i.TicketTypeId, i.TicketType.Name, i.Quantity, i.UnitPrice, i.UnitPrice * i.Quantity))
+                .ToList(),
+            // Numele categoriei îl luăm din liniile comenzii, deja încărcate
+            order.Tickets
+                .OrderBy(t => t.Id)
+                .Select(t => new TicketDto(
+                    t.Id,
+                    t.Token,
+                    order.Items.First(i => i.TicketTypeId == t.TicketTypeId).TicketType.Name,
+                    t.IsUsed))
                 .ToList());
     }
 }

@@ -7,6 +7,9 @@ public class StripeOptions
 {
     // Cheia secretă de test (sk_test_...), doar în User Secrets
     public string SecretKey { get; set; } = string.Empty;
+    // Secretul de semnare a webhook-urilor (whsec_...), tot doar în User Secrets.
+    // Cu el verificăm că un mesaj „plata s-a făcut” chiar vine de la Stripe.
+    public string WebhookSecret { get; set; } = string.Empty;
     // Adresa frontend-ului, unde Stripe trimite clientul înapoi după plată
     public string ClientBaseUrl { get; set; } = "http://localhost:4200";
 }

@@ -42,9 +42,20 @@ export class OrderDetail {
 
   private refreshedAfterExpiry = false;
 
+  // Confirmarea plății vine prin webhook, deci după întoarcerea de pe Stripe comanda poate
+  // rămâne Pending câteva secunde. Întrebăm serverul din 2 în 2 secunde, cel mult ~1 minut.
+  private static readonly POLL_INTERVAL_MS = 2000;
+  private static readonly POLL_MAX_ATTEMPTS = 30;
+  private pollAttempts = 0;
+  protected readonly confirmationDelayed = signal(false);
+
   constructor() {
     const timer = setInterval(() => this.now.set(Date.now()), 1000);
-    inject(DestroyRef).onDestroy(() => clearInterval(timer));
+    const poller = setInterval(() => this.pollForPayment(), OrderDetail.POLL_INTERVAL_MS);
+    inject(DestroyRef).onDestroy(() => {
+      clearInterval(timer);
+      clearInterval(poller);
+    });
 
     // Se încarcă de fiecare dată când se schimbă id-ul din adresă
     effect(() => this.load(Number(this.id())));
@@ -88,6 +99,39 @@ export class OrderDetail {
         this.actionError.set(errorMessage(err));
         this.cancelling.set(false);
       },
+    });
+  }
+
+  // „Verifică din nou” după ce întârzierea a fost afișată
+  protected checkAgain(): void {
+    this.pollAttempts = 0;
+    this.confirmationDelayed.set(false);
+    const o = this.order();
+    if (o) this.refresh(o.id);
+  }
+
+  // Scurtă formă a token-ului, ca referință (token-ul întreg va fi doar în codul QR)
+  protected shortCode(token: string): string {
+    return token.slice(0, 8).toUpperCase();
+  }
+
+  private pollForPayment(): void {
+    const o = this.order();
+    if (!o || o.status !== 'Pending' || this.plata() !== 'succes') return;
+
+    if (this.pollAttempts >= OrderDetail.POLL_MAX_ATTEMPTS) {
+      this.confirmationDelayed.set(true);
+      return;
+    }
+    this.pollAttempts++;
+    this.refresh(o.id);
+  }
+
+  // Reîncarcă comanda în liniște: o eroare trecătoare nu înlocuiește pagina cu un mesaj de eroare
+  private refresh(id: number): void {
+    this.ordersService.get(id).subscribe({
+      next: (order) => this.order.set(order),
+      error: () => undefined,
     });
   }
 
