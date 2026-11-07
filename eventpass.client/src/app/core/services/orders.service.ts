@@ -25,6 +25,12 @@ export class OrdersService {
     return this.http.post<{ url: string }>(`/api/orders/${id}/checkout`, {});
   }
 
+  // Imaginea QR a unui bilet, ca fișier în memorie (blob). Nu o putem pune direct într-un <img src="...">,
+  // pentru că o etichetă <img> nu trimite tokenul de login; HttpClient îl adaugă singur (interceptorul).
+  ticketQr(orderId: number, ticketId: number): Observable<Blob> {
+    return this.http.get(`/api/orders/${orderId}/tickets/${ticketId}/qr`, { responseType: 'blob' });
+  }
+
   cancel(id: number): Observable<Order> {
     return this.http.post<Order>(`/api/orders/${id}/cancel`, {});
   }

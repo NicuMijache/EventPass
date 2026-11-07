@@ -61,9 +61,17 @@
             <ul class="ticket-list">
               @for (ticket of o.tickets; track ticket.id; let i = $index) {
                 <li class="ticket-card" [class.ticket-card--used]="ticket.isUsed">
-                  <div>
+                  <app-ticket-qr
+                    [orderId]="o.id"
+                    [ticketId]="ticket.id"
+                    [alt]="'Cod QR pentru biletul ' + (i + 1) + ', ' + ticket.ticketTypeName"
+                  />
+                  <div class="ticket-card__info">
                     <p class="ticket-card__name">{{ ticket.ticketTypeName }}</p>
                     <p class="ticket-card__meta">Bilet {{ i + 1 }} din {{ o.tickets.length }}</p>
+                    @if (ticket.isUsed) {
+                      <p class="ticket-card__used">Folosit la intrare</p>
+                    }
                   </div>
                   <div class="ticket-card__code">
                     <span class="ticket-card__label">Cod</span>
@@ -128,7 +136,7 @@
           <p class="form-note">Locurile au fost eliberate. Poți rezerva din nou de pe pagina evenimentului.</p>
           <a class="btn btn--wide" [routerLink]="['/evenimente', o.event.id]">Înapoi la eveniment</a>
         } @else if (o.status === 'Paid') {
-          <p class="form-note">Plata a fost confirmată{{ o.paidAt ? ' pe ' + (o.paidAt | date: 'd MMM y, HH:mm') : '' }}. Biletele cu cod QR vin pe email.</p>
+          <p class="form-note">Plata a fost confirmată{{ o.paidAt ? ' pe ' + (o.paidAt | date: 'd MMM y, HH:mm') : '' }}. Arată codul QR de pe telefon la intrare sau descarcă-l.</p>
         }
       </aside>
     </div>
