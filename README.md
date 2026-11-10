@@ -59,6 +59,13 @@ Browserele permit camera **doar pe pagini securizate**: HTTPS sau `localhost`. D
 
 Fără cameră (sau dacă nu merge), codul se poate introduce de mână: cele 8 caractere de sub codul QR sau tot codul biletului.
 
+Fiecare cod citit se verifică pe server (`POST /api/tickets/validate`):
+- **verde, „Bilet valid”**: biletul e plătit și nefolosit; din acest moment e marcat ca folosit;
+- **galben, „Deja utilizat”**: a mai fost scanat (se vede și ora primei scanări);
+- **roșu, „Respins”**: cod inexistent, comandă rambursată/anulată sau biletul altui organizator (un Organizer validează doar biletele evenimentelor lui; Staff și Admin, pe toate).
+
+Dacă două telefoane scanează același bilet în același moment, intră o singură persoană: marcarea se face printr-un singur `UPDATE ... WHERE IsUsed = false`, atomic în baza de date.
+
 ## Secrete
 Nu se păstrează în repository. Se folosesc User Secrets local și GitHub Secrets în CI.
 

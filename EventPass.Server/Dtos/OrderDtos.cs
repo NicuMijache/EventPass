@@ -29,3 +29,19 @@ public record OrderDto(
     List<TicketDto> Tickets,
     // Când s-au trimis biletele pe email (null = încă nu)
     DateTime? TicketsEmailedAt);
+
+// Scanarea unui bilet la intrare (#17): textul citit din QR sau codul scurt tastat
+public record ValidateTicketRequest([Required, MaxLength(64)] string Code);
+
+// Răspunsul scanării. Result: Valid, AlreadyUsed, NotFound, NotPaid, OtherOrganizer, Ambiguous, InvalidCode.
+// Detaliile biletului (eveniment, tip, nume) apar doar când biletul a fost găsit.
+public record TicketValidationDto(
+    string Result,
+    string Message,
+    string? ShortCode,
+    string? EventTitle,
+    DateTime? EventStartsAt,
+    string? TicketTypeName,
+    string? HolderName,
+    // Când a fost folosit: acum (Valid) sau la prima scanare (AlreadyUsed)
+    DateTime? UsedAt);
