@@ -36,6 +36,8 @@ builder.Services.AddSingleton<IPaymentGateway, StripePaymentGateway>();
 builder.Services.AddScoped<OrderPaymentService>();
 // Expirarea rezervărilor neplătite (#18): la deschiderea comenzii și periodic, în fundal
 builder.Services.AddScoped<ReservationExpiryService>();
+// Rambursări (#19); cele rămase neterminate le termină același proces de fundal
+builder.Services.AddScoped<OrderRefundService>();
 builder.Services.AddHostedService<ReservationExpiryWorker>();
 builder.Services.AddSingleton<IQrCodeGenerator, QrCodeGenerator>();
 // Validarea biletelor la intrare (#17)

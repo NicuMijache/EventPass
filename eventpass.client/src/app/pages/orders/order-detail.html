@@ -16,10 +16,24 @@
       <p class="eyebrow">Comanda #{{ o.id }} · {{ o.createdAt | date: 'd MMM y, HH:mm' }}</p>
       <h1 class="display order-head__title">
         @switch (o.status) {
-          @case ('Pending') { Biletele sunt rezervate }
-          @case ('Paid') { Comanda e plătită }
-          @case ('Cancelled') { Comanda a fost anulată }
-          @default { {{ labels[o.status] }} }
+          @case ('Pending') {
+            Biletele sunt rezervate
+          }
+          @case ('Paid') {
+            Comanda e plătită
+          }
+          @case ('Cancelled') {
+            Comanda a fost anulată
+          }
+          @case ('Refunded') {
+            Ai primit banii înapoi
+          }
+          @case ('RefundPending') {
+            Rambursarea e în curs
+          }
+          @default {
+            {{ labels[o.status] }}
+          }
         }
       </h1>
       <span class="status status--{{ o.status.toLowerCase() }}">{{ labels[o.status] }}</span>
@@ -91,19 +105,30 @@
           <div class="timer" aria-live="polite">
             @if (confirmationDelayed()) {
               <p class="timer__label">Confirmarea durează mai mult decât de obicei</p>
-              <p class="timer__hint">Dacă ai plătit, biletele apar aici imediat ce Stripe ne confirmă plata. Poți verifica din nou sau reveni mai târziu din „Comenzile mele”.</p>
+              <p class="timer__hint">
+                Dacă ai plătit, biletele apar aici imediat ce Stripe ne confirmă plata. Poți
+                verifica din nou sau reveni mai târziu din „Comenzile mele”.
+              </p>
             } @else {
               <p class="timer__label">Plata se confirmă…</p>
-              <p class="timer__hint">Așteptăm confirmarea de la Stripe. Pagina se actualizează singură.</p>
+              <p class="timer__hint">
+                Așteptăm confirmarea de la Stripe. Pagina se actualizează singură.
+              </p>
             }
           </div>
           @if (confirmationDelayed()) {
-            <button class="btn btn--wide" type="button" (click)="checkAgain()">Verifică din nou</button>
+            <button class="btn btn--wide" type="button" (click)="checkAgain()">
+              Verifică din nou
+            </button>
           }
-          <a class="btn btn--outline btn--wide" [routerLink]="['/comenzi', o.id]">Nu ai finalizat plata? Înapoi</a>
+          <a class="btn btn--outline btn--wide" [routerLink]="['/comenzi', o.id]"
+            >Nu ai finalizat plata? Înapoi</a
+          >
         } @else if (o.status === 'Pending') {
           @if (plata() === 'anulata') {
-            <p class="form-note">Plata nu a fost finalizată. Locurile sunt încă rezervate, poți încerca din nou.</p>
+            <p class="form-note">
+              Plata nu a fost finalizată. Locurile sunt încă rezervate, poți încerca din nou.
+            </p>
           }
 
           <div class="timer" [class.timer--urgent]="secondsLeft() < 120">
@@ -119,26 +144,126 @@
             <p class="form-note">Biletele sunt gratuite: confirmarea fără plată vine în curând.</p>
           } @else {
             <button class="btn btn--wide" type="button" (click)="pay()" [disabled]="paying()">
-              {{ paying() ? 'Te trimitem la plată…' : 'Plătește ' + (o.totalAmount | number: '1.0-2') + ' lei' }}
+              {{
+                paying()
+                  ? 'Te trimitem la plată…'
+                  : 'Plătește ' + (o.totalAmount | number: '1.0-2') + ' lei'
+              }}
             </button>
             <p class="secure-note">
               <svg viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.5" />
-                <path d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.5" />
+                <rect
+                  x="5"
+                  y="10"
+                  width="14"
+                  height="10"
+                  rx="2"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                />
+                <path
+                  d="M8 10V7a4 4 0 0 1 8 0v3"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                />
               </svg>
               Plata securizată prin Stripe (mod test)
             </p>
           }
-          <button class="btn btn--outline btn--wide" type="button" (click)="cancel()" [disabled]="cancelling() || paying()">
+          <button
+            class="btn btn--outline btn--wide"
+            type="button"
+            (click)="cancel()"
+            [disabled]="cancelling() || paying()"
+          >
             {{ cancelling() ? 'Se anulează…' : 'Anulează rezervarea' }}
           </button>
         } @else if (o.status === 'Cancelled') {
-          <p class="form-note">Locurile au fost eliberate. Poți rezerva din nou de pe pagina evenimentului.</p>
-          <a class="btn btn--wide" [routerLink]="['/evenimente', o.event.id]">Înapoi la eveniment</a>
+          <p class="form-note">
+            Locurile au fost eliberate. Poți rezerva din nou de pe pagina evenimentului.
+          </p>
+          <a class="btn btn--wide" [routerLink]="['/evenimente', o.event.id]"
+            >Înapoi la eveniment</a
+          >
         } @else if (o.status === 'Paid') {
-          <p class="form-note">Plata a fost confirmată{{ o.paidAt ? ' pe ' + (o.paidAt | date: 'd MMM y, HH:mm') : '' }}.
-            {{ o.ticketsEmailedAt ? 'Am trimis biletele și pe email.' : 'Biletele ajung și pe email în câteva clipe.' }}
-            Arată codul QR de pe telefon la intrare.</p>
+          <p class="form-note">
+            Plata a fost confirmată{{
+              o.paidAt ? ' pe ' + (o.paidAt | date: 'd MMM y, HH:mm') : ''
+            }}.
+            {{
+              o.ticketsEmailedAt
+                ? 'Am trimis biletele și pe email.'
+                : 'Biletele ajung și pe email în câteva clipe.'
+            }}
+            Arată codul QR de pe telefon la intrare.
+          </p>
+
+          @if (actionError(); as message) {
+            <p class="form-alert" role="alert">{{ message }}</p>
+          }
+
+          @if (o.canRefund) {
+            <div class="refund">
+              @if (confirmingRefund()) {
+                <div class="refund__confirm" role="alertdialog" aria-labelledby="refund-q">
+                  <p id="refund-q" class="refund__question">Anulezi comanda?</p>
+                  <p class="form-note">
+                    Toate cele {{ o.tickets.length }} bilete se anulează imediat și nu mai pot fi
+                    folosite. Primești înapoi {{ o.totalAmount | number: '1.0-2' }} lei pe cardul cu
+                    care ai plătit.
+                  </p>
+                  <button
+                    class="btn btn--wide"
+                    type="button"
+                    (click)="refund()"
+                    [disabled]="refunding()"
+                  >
+                    {{ refunding() ? 'Se anulează…' : 'Da, anulează și dă-mi banii înapoi' }}
+                  </button>
+                  <button
+                    class="btn btn--outline btn--wide"
+                    type="button"
+                    (click)="keepOrder()"
+                    [disabled]="refunding()"
+                  >
+                    Nu, păstrez biletele
+                  </button>
+                </div>
+              } @else {
+                <button class="btn btn--outline btn--wide" type="button" (click)="askRefund()">
+                  Anulează comanda
+                </button>
+                <p class="form-note">
+                  Poți anula și primi banii înapoi până pe
+                  {{ o.refundDeadline | date: 'd MMMM y, HH:mm' }}.
+                </p>
+              }
+            </div>
+          } @else {
+            <p class="form-note">
+              Comanda nu mai poate fi anulată online ({{
+                hasUsedTicket(o)
+                  ? 'un bilet a fost folosit la intrare'
+                  : 'termenul a trecut: cu 24 de ore înainte de eveniment'
+              }}).
+            </p>
+          }
+        } @else if (o.status === 'Refunded') {
+          <p class="form-note">
+            Biletele au fost anulate și am dat înapoi {{ o.totalAmount | number: '1.0-2' }} lei
+            {{ o.refundedAt ? 'pe ' + (o.refundedAt | date: 'd MMM y, HH:mm') : '' }}. Banii apar pe
+            card în câteva zile lucrătoare.
+          </p>
+          <a class="btn btn--wide" [routerLink]="['/evenimente', o.event.id]"
+            >Înapoi la eveniment</a
+          >
+        } @else if (o.status === 'RefundPending') {
+          <p class="form-note">
+            Biletele sunt deja anulate. Rambursarea se finalizează automat în câteva minute; nu
+            trebuie să faci nimic.
+          </p>
         }
       </aside>
     </div>

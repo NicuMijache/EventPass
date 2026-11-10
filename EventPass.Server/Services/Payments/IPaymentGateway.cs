@@ -37,7 +37,18 @@ public interface IPaymentGateway
 
     // null dacă sesiunea nu există
     Task<CheckoutSession?> GetCheckoutSessionAsync(string sessionId, CancellationToken ct = default);
+
+    // Închide pagina de plată, ca să nu se mai poată plăti (#19). Întoarce starea de după:
+    // Expired = închisă; Complete = prea târziu, clientul plătise deja. null dacă sesiunea nu există.
+    Task<CheckoutSession?> ExpireCheckoutSessionAsync(string sessionId, CancellationToken ct = default);
+
+    // Dă înapoi toți banii plății făcute în sesiune (#19). idempotencyKey: aceeași cheie trimisă de mai multe ori
+    // (reîncercări, cereri duble) produce O SINGURĂ rambursare la Stripe.
+    Task<RefundResult> RefundAsync(string sessionId, string idempotencyKey, CancellationToken ct = default);
 }
+
+// Id-ul rambursării la Stripe (re_...) și starea ei (succeeded, pending)
+public record RefundResult(string RefundId, string Status);
 
 // Nu s-a configurat cheia Stripe (Stripe:SecretKey lipsește din User Secrets)
 public class PaymentsNotConfiguredException() : Exception("Stripe:SecretKey nu este setat.");

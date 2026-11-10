@@ -25,7 +25,11 @@ public class OrderTicketsController : ControllerBase
 
     // Imaginea QR a unui bilet. Nu o păstrăm nicăieri: o calculăm din token de fiecare dată.
     [HttpGet("{ticketId:int}/qr")]
-    [Produces("image/png")]
+    // Doar răspunsul 200 e imagine. Nu folosim [Produces("image/png")]: ar obliga și mesajele de eroare
+    // (ex. 409 pentru o comandă rambursată) să fie PNG, iar ASP.NET ar răspunde 406 în loc de mesajul nostru.
+    [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK, "image/png")]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> GetQr(int orderId, int ticketId, [FromQuery] int size = QrCodeGenerator.DefaultPixelsPerModule, CancellationToken ct = default)
     {
         var userId = User.GetUserId();

@@ -59,7 +59,7 @@ public sealed class StockRaceTests : IDisposable
     {
         await using var db = Db();
         var controller = new OrdersController(db, new SeatReservationService(db), _stripe,
-            TestHelpers.CreateExpiryService(db, _stripe), Options.Create(new StripeOptions()));
+            TestHelpers.CreateExpiryService(db, _stripe), TestHelpers.CreateRefundService(db, _stripe), Options.Create(new StripeOptions()));
         TestHelpers.LoginAs(controller, userId, "Client");
         return await controller.Create(new CreateOrderRequest(1, [new OrderItemRequest(1, quantity)]), default);
     }

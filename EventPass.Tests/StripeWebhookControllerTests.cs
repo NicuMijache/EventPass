@@ -21,6 +21,8 @@ public class StripeWebhookControllerTests : IDisposable
 
     private readonly SqliteTestDatabase _database = new();
     private readonly FakeTicketEmailSignal _emailSignal = new();
+    // Stripe simulat, pentru rambursarea automată a plăților venite după anularea comenzii
+    private readonly FakePaymentGateway _stripe = new();
 
     public StripeWebhookControllerTests() => Seed(_database);
 
@@ -68,6 +70,7 @@ public class StripeWebhookControllerTests : IDisposable
         var db = _database.CreateContext();
         var controller = new StripeWebhookController(
             new OrderPaymentService(db, NullLogger<OrderPaymentService>.Instance),
+            TestHelpers.CreateRefundService(db, _stripe),
             _emailSignal,
             Options.Create(new StripeOptions { WebhookSecret = webhookSecret }),
             NullLogger<StripeWebhookController>.Instance);
@@ -90,6 +93,42 @@ public class StripeWebhookControllerTests : IDisposable
     {
         using var db = _database.CreateContext();
         return db.Tickets.Count();
+    }
+
+    [Fact]
+    public async Task Receive_PlataPentruOComandaAnulata_DaBaniiInapoiAutomat()
+    {
+        // Clientul a anulat comanda (locurile s-au eliberat), dar plata a ajuns totuși
+        using (var db = _database.CreateContext())
+            await db.Orders.Where(o => o.Id == OrderId).ExecuteUpdateAsync(s => s.SetProperty(o => o.Status, OrderStatus.Cancelled));
+        _stripe.SetPaid(SessionId, AmountMinor);
+        var payload = EventJson();
+
+        var result = await CreateController(payload, Sign(payload, Secret)).Receive(default);
+        var again = await CreateController(payload, Sign(payload, Secret)).Receive(default);   // Stripe retrimite
+
+        Assert.IsType<OkResult>(result);
+        Assert.IsType<OkResult>(again);
+        var order = LoadOrder();
+        Assert.Equal(OrderStatus.Cancelled, order.Status);   // fără bilete
+        Assert.Equal(0, TicketCount());
+        Assert.Equal("re_test_1", order.StripeRefundId);     // dar cu banii dați înapoi
+        Assert.NotNull(order.RefundedAt);
+        Assert.Single(_stripe.Refunds);                      // o singură rambursare, deși mesajul a venit de 2 ori
+    }
+
+    [Fact]
+    public async Task Receive_PlataPentruComandaAnulata_StripeIndisponibil_Raspunde500CaSaFieRetrimis()
+    {
+        using (var db = _database.CreateContext())
+            await db.Orders.Where(o => o.Id == OrderId).ExecuteUpdateAsync(s => s.SetProperty(o => o.Status, OrderStatus.Cancelled));
+        _stripe.SetPaid(SessionId, AmountMinor);
+        _stripe.RefundFailsWith = new PaymentGatewayException("timeout", new TimeoutException());
+        var payload = EventJson();
+
+        await Assert.ThrowsAsync<PaymentGatewayException>(() => CreateController(payload, Sign(payload, Secret)).Receive(default));
+
+        Assert.Null(LoadOrder().StripeRefundId);
     }
 
     [Fact]

@@ -27,19 +27,25 @@ public class OrdersController : ControllerBase
     private readonly SeatReservationService _seats;
     private readonly IPaymentGateway _payments;
     private readonly ReservationExpiryService _expiry;
+    private readonly OrderRefundService _refunds;
     private readonly StripeOptions _stripe;
+
+    // Clientul își poate anula singur o comandă plătită cel târziu cu atât înainte de eveniment (#19)
+    public static readonly TimeSpan RefundWindow = TimeSpan.FromHours(24);
 
     public OrdersController(
         AppDbContext db,
         SeatReservationService seats,
         IPaymentGateway payments,
         ReservationExpiryService expiry,
+        OrderRefundService refunds,
         IOptions<StripeOptions> stripe)
     {
         _db = db;
         _seats = seats;
         _payments = payments;
         _expiry = expiry;
+        _refunds = refunds;
         _stripe = stripe.Value;
     }
 
@@ -157,11 +163,58 @@ public class OrdersController : ControllerBase
         var order = await LoadOrderAsync(id, User.GetUserId(), ct);
         if (order is null)
             return NotFound();
+        if (order.Status != OrderStatus.Pending)
+            return Conflict(new { message = "Doar o comandă neplătită poate fi anulată." });
+
+        // Dacă a deschis pagina de plată, o închidem ÎNTÂI la Stripe. Altfel ar putea plăti în alt tab
+        // după ce noi am eliberat locurile: ar rămâne cu banii luați și fără bilete (#19).
+        if (order.StripeSessionId is not null)
+        {
+            try
+            {
+                var session = await _payments.ExpireCheckoutSessionAsync(order.StripeSessionId, ct);
+                if (session is { Status: CheckoutSessionStatus.Complete })
+                    return Conflict(new { message = "Plata a fost deja făcută; comanda se confirmă în câteva momente." });
+            }
+            catch (Exception e) when (e is PaymentGatewayException or PaymentsNotConfiguredException)
+            {
+                // Nu știm dacă pagina de plată mai e deschisă: nu anulăm pe ghicite
+                return StatusCode(StatusCodes.Status502BadGateway,
+                    new { message = "Nu am putut opri plata la Stripe. Încearcă din nou peste puțin timp." });
+            }
+        }
 
         if (!await _seats.CancelAsync(order, ct))
             return Conflict(new { message = "Doar o comandă neplătită poate fi anulată." });
 
         return Ok(ToDto(order));
+    }
+
+    // Clientul renunță la o comandă PLĂTITĂ și primește banii înapoi (#19).
+    // Reguli: cel târziu cu 24 de ore înainte de eveniment și niciun bilet folosit.
+    [HttpPost("{id:int}/refund")]
+    public async Task<ActionResult<OrderDto>> Refund(int id, CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        var order = await LoadOrderAsync(id, userId, ct);
+        if (order is null)
+            return NotFound();
+
+        // O rambursare începută (ex. Stripe a picat) se poate relua oricând; una nouă, doar înainte de termen
+        if (order.Status == OrderStatus.Paid && DateTime.UtcNow > RefundDeadlineOf(order))
+            return Conflict(new { message = "Rambursarea se poate cere cel târziu cu 24 de ore înainte de eveniment." });
+
+        switch (await _refunds.RefundAsync(id, ct))
+        {
+            case RefundOutcome.NotPaid:
+                return Conflict(new { message = "Doar o comandă plătită poate fi rambursată." });
+            case RefundOutcome.TicketsUsed:
+                return Conflict(new { message = "Un bilet din comandă a fost deja folosit la intrare, așa că nu mai poate fi rambursată." });
+        }
+
+        // Starea s-a schimbat direct în baza de date: recitim comanda (Refunded, sau RefundPending dacă Stripe n-a răspuns)
+        var updated = await OrdersQuery().AsNoTracking().SingleAsync(o => o.Id == id, ct);
+        return Ok(ToDto(updated));
     }
 
     // Pornește plata: creează (sau refolosește) o sesiune Stripe Checkout și întoarce adresa ei.
@@ -264,9 +317,14 @@ public class OrdersController : ControllerBase
     private Task<Order?> LoadOrderAsync(int id, int userId, CancellationToken ct) =>
         OrdersQuery().SingleOrDefaultAsync(o => o.Id == id && o.UserId == userId, ct);
 
+    private static DateTime RefundDeadlineOf(Order order) => order.Items[0].TicketType.Event.StartsAt - RefundWindow;
+
     private static OrderDto ToDto(Order order)
     {
         var ev = order.Items[0].TicketType.Event;
+        var canRefund = order.Status == OrderStatus.Paid
+            && DateTime.UtcNow <= RefundDeadlineOf(order)
+            && order.Tickets.All(t => !t.IsUsed);
         return new OrderDto(
             order.Id,
             order.Status.ToString(),
@@ -286,8 +344,12 @@ public class OrdersController : ControllerBase
                     t.Id,
                     t.Token,
                     order.Items.First(i => i.TicketTypeId == t.TicketTypeId).TicketType.Name,
-                    t.IsUsed))
+                    t.IsUsed,
+                    t.VoidedAt != null))
                 .ToList(),
-            order.TicketsEmailedAt);
+            order.TicketsEmailedAt,
+            order.RefundedAt,
+            canRefund,
+            RefundDeadlineOf(order));
     }
 }

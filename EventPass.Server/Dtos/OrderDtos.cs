@@ -12,7 +12,8 @@ public record OrderEventDto(int Id, string Title, string Venue, string City, Dat
 public record OrderLineDto(int TicketTypeId, string TicketTypeName, int Quantity, decimal UnitPrice, decimal LineTotal);
 
 // Un bilet emis după plată. Token-ul e cel din codul QR; îl vede doar proprietarul comenzii.
-public record TicketDto(int Id, Guid Token, string TicketTypeName, bool IsUsed);
+// IsVoided: anulat printr-o rambursare (#19), nu mai e valabil la intrare.
+public record TicketDto(int Id, Guid Token, string TicketTypeName, bool IsUsed, bool IsVoided);
 
 // Adresa paginii de plată Stripe, unde frontend-ul trimite browserul
 public record CheckoutResponse(string Url);
@@ -28,7 +29,12 @@ public record OrderDto(
     List<OrderLineDto> Items,
     List<TicketDto> Tickets,
     // Când s-au trimis biletele pe email (null = încă nu)
-    DateTime? TicketsEmailedAt);
+    DateTime? TicketsEmailedAt,
+    // Rambursarea (#19): când s-au dat banii înapoi și dacă clientul o mai poate cere acum
+    DateTime? RefundedAt,
+    bool CanRefund,
+    // Până când se poate cere rambursarea (cu 24 de ore înainte de eveniment)
+    DateTime RefundDeadline);
 
 // Scanarea unui bilet la intrare (#17): textul citit din QR sau codul scurt tastat
 public record ValidateTicketRequest([Required, MaxLength(64)] string Code);

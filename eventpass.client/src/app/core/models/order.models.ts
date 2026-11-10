@@ -1,6 +1,7 @@
 // Tipurile care corespund DTO-urilor din OrderDtos.cs
 
-export type OrderStatus = 'Pending' | 'Paid' | 'Cancelled' | 'Refunded';
+// RefundPending: rambursarea a început (biletele sunt anulate), așteptăm confirmarea de la Stripe
+export type OrderStatus = 'Pending' | 'Paid' | 'Cancelled' | 'Refunded' | 'RefundPending';
 
 export interface OrderItemRequest {
   ticketTypeId: number;
@@ -35,6 +36,8 @@ export interface Ticket {
   token: string;
   ticketTypeName: string;
   isUsed: boolean;
+  // Anulat printr-o rambursare: nu mai e valabil la intrare
+  isVoided: boolean;
 }
 
 export interface Order {
@@ -49,6 +52,10 @@ export interface Order {
   tickets: Ticket[];
   // Când s-au trimis biletele pe email (null = încă nu)
   ticketsEmailedAt: string | null;
+  // Rambursarea: când s-au dat banii înapoi, dacă se mai poate cere acum și până când
+  refundedAt: string | null;
+  canRefund: boolean;
+  refundDeadline: string;
 }
 
 // Textele afișate pentru fiecare stare
@@ -57,4 +64,5 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   Paid: 'Plătit',
   Cancelled: 'Anulat',
   Refunded: 'Rambursat',
+  RefundPending: 'Rambursare în curs',
 };
