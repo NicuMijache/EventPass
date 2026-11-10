@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TicketValidation } from '../../core/models/ticket.models';
 import { CameraError } from '../../core/qr/camera.service';
 import { ScannerEngine, ScannerSession } from '../../core/qr/scanner-engine';
 import { Scan } from './scan';
@@ -10,23 +13,76 @@ class FakeEngine {
   onCode: (text: string) => void = () => undefined;
   onEnded: () => void = () => undefined;
   stop = vi.fn();
-  start = vi.fn(async (_video: HTMLVideoElement, onCode: (text: string) => void, onEnded?: () => void): Promise<ScannerSession> => {
-    this.onCode = onCode;
-    this.onEnded = onEnded ?? (() => undefined);
-    return { stop: this.stop };
-  });
+  start = vi.fn(
+    async (
+      _video: HTMLVideoElement,
+      onCode: (text: string) => void,
+      onEnded?: () => void,
+    ): Promise<ScannerSession> => {
+      this.onCode = onCode;
+      this.onEnded = onEnded ?? (() => undefined);
+      return { stop: this.stop };
+    },
+  );
 }
 
 describe('Scan (pagina de scanare)', () => {
   let fixture: ComponentFixture<Scan>;
   let engine: FakeEngine;
+  let http: HttpTestingController;
+  let vibrate: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     engine = new FakeEngine();
-    TestBed.configureTestingModule({ imports: [Scan], providers: [{ provide: ScannerEngine, useValue: engine }] });
+    vibrate = vi.fn(() => true);
+    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true });
+    TestBed.configureTestingModule({
+      imports: [Scan],
+      providers: [
+        { provide: ScannerEngine, useValue: engine },
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
+    });
+    http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(Scan);
     fixture.detectChanges();
   });
+
+  afterEach(() => {
+    delete (navigator as { vibrate?: unknown }).vibrate;
+  });
+
+  const empty: TicketValidation = {
+    result: 'Valid',
+    message: '',
+    shortCode: null,
+    eventTitle: null,
+    eventStartsAt: null,
+    ticketTypeName: null,
+    holderName: null,
+    usedAt: null,
+  };
+
+  // Răspunsul serverului pentru cererea de validare în așteptare (cu detaliile unui bilet găsit)
+  function answer(result: TicketValidation['result'], extra: Partial<TicketValidation> = {}) {
+    const found = result === 'Valid' || result === 'AlreadyUsed' || result === 'NotPaid';
+    const body: TicketValidation = {
+      result,
+      message: `mesaj ${result}`,
+      shortCode: found ? '3F2A9C1B' : null,
+      eventTitle: found ? 'Concert Rock' : null,
+      eventStartsAt: found ? '2026-12-01T18:00:00Z' : null,
+      ticketTypeName: found ? 'VIP' : null,
+      holderName: found ? 'Ana Pop' : null,
+      usedAt: result === 'Valid' || result === 'AlreadyUsed' ? '2026-11-10T17:05:09Z' : null,
+      ...extra,
+    };
+    http.expectOne('/api/tickets/validate').flush(body);
+    fixture.detectChanges();
+  }
+
+  const resultBox = () => el().querySelector('.result') as HTMLElement;
 
   const el = () => fixture.nativeElement as HTMLElement;
   const text = () => (el().textContent ?? '').replace(/\s+/g, ' ');
@@ -82,10 +138,11 @@ describe('Scan (pagina de scanare)', () => {
 
     scan(TOKEN);
 
-    expect(text()).toContain('Cod EventPass citit');
+    expect(text()).toContain('Se verifică');
     expect(text()).toContain('3F2A9C1B');
     expect(text()).toContain(TOKEN);
     expect(text()).toContain('cu camera');
+    expect(http.expectOne('/api/tickets/validate').request.body).toEqual({ code: TOKEN });
   });
 
   it('un cod citit cu litere mici e normalizat (majuscule) înainte de afișare', async () => {
@@ -94,6 +151,7 @@ describe('Scan (pagina de scanare)', () => {
     scan(TOKEN.toLowerCase());
 
     expect(text()).toContain(TOKEN);
+    expect(http.expectOne('/api/tickets/validate').request.body).toEqual({ code: TOKEN });
   });
 
   it('un cod care nu e bilet (un link) e marcat „nerecunoscut” și afișat ca TEXT, nu ca link', async () => {
@@ -106,6 +164,8 @@ describe('Scan (pagina de scanare)', () => {
     expect(text()).toContain('Nu este un bilet EventPass');
     expect(shown?.textContent).toContain('https://site-rau.example/pagina');
     expect(el().querySelector('.result a')).toBeNull();
+    http.expectNone('/api/tickets/validate'); // nu întrebăm serverul despre coduri străine
+    expect(resultBox().classList).toContain('result--bad');
   });
 
   it('cod HTML din QR e afișat ca text, nu interpretat', async () => {
@@ -134,6 +194,7 @@ describe('Scan (pagina de scanare)', () => {
     scan('FA46C34B');
 
     expect(text()).toContain('Cod nerecunoscut');
+    http.expectNone('/api/tickets/validate');
   });
 
   it('„Oprește camera” oprește motorul și revine la „Pornește camera”', async () => {
@@ -222,16 +283,16 @@ describe('Scan (pagina de scanare)', () => {
     it('acceptă tokenul întreg', () => {
       typeManual(TOKEN);
 
-      expect(text()).toContain('Cod EventPass citit');
       expect(text()).toContain('de mână');
       expect(text()).toContain(TOKEN);
+      expect(http.expectOne('/api/tickets/validate').request.body).toEqual({ code: TOKEN });
     });
 
     it('acceptă codul scurt, cu litere mici și spațiu', () => {
       typeManual('fa46 c34b');
 
-      expect(text()).toContain('Cod scurt introdus');
       expect(text()).toContain('FA46C34B');
+      expect(http.expectOne('/api/tickets/validate').request.body).toEqual({ code: 'FA46C34B' });
     });
 
     it('goleste câmpul după un cod acceptat', () => {
@@ -240,12 +301,16 @@ describe('Scan (pagina de scanare)', () => {
       expect((el().querySelector('.manual__input') as HTMLInputElement).value).toBe('');
     });
 
-    it.each(['', 'abc', 'FA46C34G', 'https://example.com', '12345678901'])('respinge %j cu un mesaj', (value) => {
-      typeManual(value);
+    it.each(['', 'abc', 'FA46C34G', 'https://example.com', '12345678901'])(
+      'respinge %j cu un mesaj',
+      (value) => {
+        typeManual(value);
 
-      expect(text()).toContain('Cod invalid');
-      expect(text()).toContain('Niciun cod citit încă');
-    });
+        expect(text()).toContain('Cod invalid');
+        expect(text()).toContain('Niciun cod citit încă');
+        http.expectNone('/api/tickets/validate');
+      },
+    );
 
     it('un cod invalid nu strică ultimul cod citit', async () => {
       await startCamera();
@@ -257,6 +322,126 @@ describe('Scan (pagina de scanare)', () => {
     });
   });
 
+  describe('verificarea pe server', () => {
+    it('bilet valid → verde, „Poate intra”, cu detaliile biletului și o vibrație scurtă', async () => {
+      await startCamera();
+      scan(TOKEN);
+
+      answer('Valid');
+
+      expect(text()).toContain('Bilet valid');
+      expect(text()).toContain('Poate intra');
+      expect(text()).toContain('Concert Rock');
+      expect(text()).toContain('VIP');
+      expect(text()).toContain('Ana Pop');
+      expect(resultBox().classList).toContain('result--ok');
+      expect(vibrate).toHaveBeenLastCalledWith(80);
+    });
+
+    it('bilet deja folosit → galben, cu ora primei scanări și o vibrație lungă', async () => {
+      await startCamera();
+      scan(TOKEN);
+
+      answer('AlreadyUsed');
+
+      expect(text()).toContain('Deja utilizat');
+      expect(text()).toContain('Nu poate intra din nou');
+      expect(el().querySelector('.result__message')?.textContent).toMatch(/\d\d:05:09/);
+      expect(resultBox().classList).toContain('result--warn');
+      expect(vibrate.mock.lastCall?.[0]).toEqual([200, 100, 200, 100, 200]);
+    });
+
+    it.each(['NotFound', 'NotPaid', 'OtherOrganizer', 'Ambiguous', 'InvalidCode'] as const)(
+      '%s → roșu, „Respins”, cu mesajul serverului',
+      (result) => {
+        typeManual('FA46C34B');
+
+        answer(result, { message: `Motivul pentru ${result}` });
+
+        expect(text()).toContain('Respins');
+        expect(text()).toContain(`Motivul pentru ${result}`);
+        expect(text()).not.toContain('Poate intra');
+        expect(resultBox().classList).toContain('result--bad');
+      },
+    );
+
+    it('cât așteaptă răspunsul, NU arată nici valid, nici respins', async () => {
+      await startCamera();
+      scan(TOKEN);
+
+      expect(text()).toContain('Se verifică');
+      expect(text()).not.toContain('Bilet valid');
+      expect(text()).not.toContain('Respins');
+      expect(resultBox().classList).toContain('result--pending');
+      http.expectOne('/api/tickets/validate');
+    });
+
+    it('serverul nu răspunde → „Neverificat”, iar „Verifică din nou” retrimite același cod', async () => {
+      await startCamera();
+      scan(TOKEN);
+
+      http.expectOne('/api/tickets/validate').error(new ProgressEvent('error'), { status: 0 });
+      fixture.detectChanges();
+
+      expect(text()).toContain('Neverificat');
+      expect(text()).toContain('Serverul nu răspunde');
+      expect(text()).not.toContain('Poate intra');
+      expect(resultBox().classList).toContain('result--bad');
+
+      (el().querySelector('.result__retry') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(text()).toContain('Se verifică');
+      expect(http.expectOne('/api/tickets/validate').request.body).toEqual({ code: TOKEN });
+    });
+
+    it('un răspuns de eroare cu mesaj (ex. 403) afișează mesajul serverului', () => {
+      typeManual('FA46C34B');
+
+      http
+        .expectOne('/api/tickets/validate')
+        .flush({ message: 'Nu ai acces.' }, { status: 403, statusText: 'Forbidden' });
+      fixture.detectChanges();
+
+      expect(text()).toContain('Nu ai acces.');
+    });
+
+    it('răspunsurile care vin în altă ordine ajung fiecare la codul lui', async () => {
+      await startCamera();
+      scan(TOKEN);
+      scan('AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE');
+      const [first, second] = http.match('/api/tickets/validate');
+
+      // Al doilea răspunde primul: valid. Apoi primul: deja folosit.
+      second.flush({ ...empty, result: 'Valid' });
+      first.flush({ ...empty, result: 'AlreadyUsed', usedAt: '2026-11-10T17:00:00Z' });
+      fixture.detectChanges();
+
+      // Ultimul cod citit rămâne cel afișat mare, cu verdictul LUI
+      expect(el().querySelector('.result__code')?.textContent).toContain('AAAAAAAA');
+      expect(text()).toContain('Bilet valid');
+      const rows = Array.from(el().querySelectorAll('.history__item')).map((n) => [
+        n.querySelector('.history__code')?.textContent?.trim(),
+        n.querySelector('.history__verdict')?.textContent?.trim(),
+      ]);
+      expect(rows).toEqual([
+        ['AAAAAAAA', 'valid'],
+        ['3F2A9C1B', 'deja folosit'],
+      ]);
+    });
+
+    it('după părăsirea paginii, un răspuns întârziat nu mai face telefonul să vibreze', async () => {
+      await startCamera();
+      scan(TOKEN);
+      const pending = http.expectOne('/api/tickets/validate');
+      vibrate.mockClear();
+
+      fixture.destroy();
+      pending.flush({ ...empty, result: 'Valid' });
+
+      expect(vibrate).not.toHaveBeenCalled();
+    });
+  });
+
   describe('istoric', () => {
     it('se afișează abia de la al doilea cod, cu cel mai nou primul', async () => {
       await startCamera();
@@ -264,7 +449,9 @@ describe('Scan (pagina de scanare)', () => {
       expect(el().querySelector('.history')).toBeNull();
 
       scan('AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE');
-      const items = Array.from(el().querySelectorAll('.history__code')).map((n) => n.textContent?.trim());
+      const items = Array.from(el().querySelectorAll('.history__code')).map((n) =>
+        n.textContent?.trim(),
+      );
 
       expect(items).toEqual(['AAAAAAAA', '3F2A9C1B']);
     });
@@ -273,7 +460,9 @@ describe('Scan (pagina de scanare)', () => {
       await startCamera();
       for (let i = 1; i <= 8; i++) scan(`0000000${i}-0000-0000-0000-000000000000`);
 
-      const items = Array.from(el().querySelectorAll('.history__code')).map((n) => n.textContent?.trim());
+      const items = Array.from(el().querySelectorAll('.history__code')).map((n) =>
+        n.textContent?.trim(),
+      );
 
       expect(items).toEqual(['00000008', '00000007', '00000006', '00000005', '00000004']);
     });
@@ -290,7 +479,9 @@ describe('Scan (pagina de scanare)', () => {
 
     it('părăsirea paginii cât camera încă pornește o oprește imediat ce e gata (altfel rămâne aprinsă)', async () => {
       let finish!: (session: ScannerSession) => void;
-      engine.start.mockImplementationOnce(() => new Promise<ScannerSession>((resolve) => (finish = resolve)));
+      engine.start.mockImplementationOnce(
+        () => new Promise<ScannerSession>((resolve) => (finish = resolve)),
+      );
       cameraButton().click();
 
       fixture.destroy();

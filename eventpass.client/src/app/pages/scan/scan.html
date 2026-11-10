@@ -1,14 +1,22 @@
 <section class="container page">
   <header class="head">
     <h1 class="display">Scanează bilete</h1>
-    <p class="lead">Îndreaptă camera spre codul QR de pe bilet, de pe telefonul sau din emailul clientului.</p>
+    <p class="lead">
+      Îndreaptă camera spre codul QR de pe bilet, de pe telefonul sau din emailul clientului.
+    </p>
   </header>
 
   <div class="layout">
     <div class="camera">
       <div class="camera__view" [class.camera__view--on]="phase() === 'scanning'">
         <!-- Elementul video există mereu (camera i se atașează la pornire); e ascuns cât timp nu scanăm -->
-        <video #video class="camera__video" playsinline muted aria-label="Imagine de la cameră"></video>
+        <video
+          #video
+          class="camera__video"
+          playsinline
+          muted
+          aria-label="Imagine de la cameră"
+        ></video>
 
         @if (phase() === 'scanning') {
           <div class="camera__frame" aria-hidden="true"></div>
@@ -16,7 +24,13 @@
         } @else {
           <div class="camera__placeholder">
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              <path
+                d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
               <path d="M8 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
             </svg>
             <p>{{ phase() === 'starting' ? 'Se pornește camera…' : 'Camera este oprită' }}</p>
@@ -28,40 +42,100 @@
         <p class="form-alert" role="alert">{{ message }}</p>
       }
 
-      <button class="btn btn--wide" type="button" (click)="toggleCamera()" [disabled]="phase() === 'starting'">
+      <button
+        class="btn btn--wide"
+        type="button"
+        (click)="toggleCamera()"
+        [disabled]="phase() === 'starting'"
+      >
         @switch (phase()) {
-          @case ('scanning') { Oprește camera }
-          @case ('starting') { Se pornește… }
-          @default { Pornește camera }
+          @case ('scanning') {
+            Oprește camera
+          }
+          @case ('starting') {
+            Se pornește…
+          }
+          @default {
+            Pornește camera
+          }
         }
       </button>
     </div>
 
     <div class="side">
-      <section class="result" aria-live="polite" aria-label="Ultimul cod citit">
-        @if (last(); as entry) {
-          @switch (entry.outcome) {
-            @case ('ticket') {
-              <p class="result__label">Cod EventPass citit</p>
-              <p class="result__code">{{ shortCodeOf(entry.value) }}</p>
+      @let entry = last();
+      <section
+        class="result"
+        [class]="entry ? 'result result--' + toneOf(entry) : 'result'"
+        aria-live="polite"
+        aria-label="Ultimul cod citit"
+      >
+        @if (entry) {
+          <!-- Verdictul, mare și colorat: personalul trebuie să-l vadă dintr-o privire -->
+          @if (entry.check; as check) {
+            @switch (check.state) {
+              @case ('pending') {
+                <p class="result__verdict">Se verifică…</p>
+              }
+              @case ('failed') {
+                <p class="result__verdict">Neverificat</p>
+                <p class="result__message">{{ check.message }}</p>
+                <button class="btn btn--outline result__retry" type="button" (click)="retry(entry)">
+                  Verifică din nou
+                </button>
+              }
+              @case ('done') {
+                @switch (check.validation.result) {
+                  @case ('Valid') {
+                    <p class="result__verdict">✓ Bilet valid</p>
+                    <p class="result__message">Poate intra.</p>
+                  }
+                  @case ('AlreadyUsed') {
+                    <p class="result__verdict">Deja utilizat</p>
+                    <p class="result__message">
+                      Folosit la {{ check.validation.usedAt | date: 'HH:mm:ss, d MMMM' }}. Nu poate
+                      intra din nou.
+                    </p>
+                  }
+                  @default {
+                    <p class="result__verdict">✕ Respins</p>
+                    <p class="result__message">{{ check.validation.message }}</p>
+                  }
+                }
+                @if (check.validation.eventTitle) {
+                  <dl class="result__details">
+                    <dt>Eveniment</dt>
+                    <dd>
+                      {{ check.validation.eventTitle }} ·
+                      {{ check.validation.eventStartsAt | date: 'd MMM, HH:mm' }}
+                    </dd>
+                    <dt>Bilet</dt>
+                    <dd>{{ check.validation.ticketTypeName }}</dd>
+                    <dt>Cumpărător</dt>
+                    <dd>{{ check.validation.holderName }}</dd>
+                  </dl>
+                }
+              }
+            }
+            <p class="result__code">
+              {{ entry.outcome === 'ticket' ? shortCodeOf(entry.value) : entry.value }}
+            </p>
+            @if (entry.outcome === 'ticket') {
               <p class="result__token">{{ entry.value }}</p>
             }
-            @case ('short') {
-              <p class="result__label">Cod scurt introdus</p>
-              <p class="result__code">{{ entry.value }}</p>
-            }
-            @default {
-              <p class="result__label result__label--warn">Cod nerecunoscut</p>
-              <p class="result__unknown">Nu este un bilet EventPass.</p>
-              <p class="result__token">{{ entry.value }}</p>
-            }
+          } @else {
+            <p class="result__verdict">Cod nerecunoscut</p>
+            <p class="result__unknown">Nu este un bilet EventPass.</p>
+            <p class="result__token">{{ entry.value }}</p>
           }
-          <p class="result__meta">{{ entry.source === 'camera' ? 'cu camera' : 'de mână' }} · {{ entry.at | date: 'HH:mm:ss' }}</p>
+          <p class="result__meta">
+            {{ entry.source === 'camera' ? 'cu camera' : 'de mână' }} ·
+            {{ entry.at | date: 'HH:mm:ss' }}
+          </p>
         } @else {
           <p class="result__label">Niciun cod citit încă</p>
           <p class="result__hint">Pornește camera sau introdu codul de mână.</p>
         }
-        <p class="result__note">Verificarea biletului (valid sau deja folosit) se adaugă în pasul următor.</p>
       </section>
 
       <!-- (submit) cu preventDefault, nu (ngSubmit): fără un grup de formular, ngSubmit nu se declanșează,
@@ -80,7 +154,9 @@
             maxlength="40"
           />
           @if (manualCode.touched && manualCode.invalid) {
-            <span class="field__error">Cod invalid. Scrie cele 8 caractere de sub codul QR sau tot codul biletului.</span>
+            <span class="field__error"
+              >Cod invalid. Scrie cele 8 caractere de sub codul QR sau tot codul biletului.</span
+            >
           }
         </label>
         <button class="btn btn--outline btn--wide" type="submit">Folosește codul</button>
@@ -91,8 +167,15 @@
           <h2 class="history__title">Ultimele coduri</h2>
           <ul class="history__list">
             @for (entry of history(); track entry.id) {
-              <li class="history__item" [class.history__item--warn]="entry.outcome === 'unknown'">
-                <span class="history__code">{{ entry.outcome === 'ticket' ? shortCodeOf(entry.value) : entry.outcome === 'short' ? entry.value : 'nerecunoscut' }}</span>
+              <li class="history__item" [class]="'history__item history__item--' + toneOf(entry)">
+                <span class="history__code">{{
+                  entry.outcome === 'ticket'
+                    ? shortCodeOf(entry.value)
+                    : entry.outcome === 'short'
+                      ? entry.value
+                      : '—'
+                }}</span>
+                <span class="history__verdict">{{ verdictOf(entry) }}</span>
                 <span class="history__time">{{ entry.at | date: 'HH:mm:ss' }}</span>
               </li>
             }

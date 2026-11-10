@@ -35,6 +35,8 @@ builder.Services.Configure<StripeOptions>(builder.Configuration.GetSection("Stri
 builder.Services.AddSingleton<IPaymentGateway, StripePaymentGateway>();
 builder.Services.AddScoped<OrderPaymentService>();
 builder.Services.AddSingleton<IQrCodeGenerator, QrCodeGenerator>();
+// Validarea biletelor la intrare (#17)
+builder.Services.AddScoped<TicketValidationService>();
 
 // Email: serverul SMTP (în dezvoltare, smtp4dev) se configurează în secțiunea „Smtp”
 builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
