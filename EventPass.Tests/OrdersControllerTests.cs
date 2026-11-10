@@ -52,6 +52,7 @@ public class OrdersControllerTests : IDisposable
             new SeatReservationService(db),
             _payments,
             TestHelpers.CreateExpiryService(db, _payments),
+            TestHelpers.CreateRefundService(db, _payments),
             Options.Create(new StripeOptions { ClientBaseUrl = "http://localhost:4200" }));
         TestHelpers.LoginAs(controller, userId, "Client");
         return (db, controller);

@@ -15,17 +15,20 @@ namespace EventPass.Server.Controllers;
 public class StripeWebhookController : ControllerBase
 {
     private readonly OrderPaymentService _payments;
+    private readonly OrderRefundService _refunds;
     private readonly ITicketEmailSignal _emails;
     private readonly StripeOptions _options;
     private readonly ILogger<StripeWebhookController> _logger;
 
     public StripeWebhookController(
         OrderPaymentService payments,
+        OrderRefundService refunds,
         ITicketEmailSignal emails,
         IOptions<StripeOptions> options,
         ILogger<StripeWebhookController> logger)
     {
         _payments = payments;
+        _refunds = refunds;
         _emails = emails;
         _options = options.Value;
         _logger = logger;
@@ -88,6 +91,11 @@ public class StripeWebhookController : ControllerBase
         // La AlreadyPaid anunțăm și el (mesaj repetat): dacă anunțul anterior s-ar fi pierdut, nu rămâne comanda netrimisă.
         if (result is PaymentConfirmation.Paid or PaymentConfirmation.AlreadyPaid)
             _emails.Notify();
+
+        // Plată pentru o comandă deja anulată (locurile s-au eliberat): banii se dau înapoi automat (#19).
+        // Dacă Stripe nu răspunde acum, excepția duce la 500 și Stripe retrimite mesajul mai târziu.
+        if (result is PaymentConfirmation.OrderNotPending)
+            await _refunds.RefundOrphanPaymentAsync(orderId, session.Id, ct);
 
         _logger.LogInformation("Webhook {EventId} pentru comanda {OrderId}: {Result}.", stripeEvent.Id, orderId, result);
         return Ok();

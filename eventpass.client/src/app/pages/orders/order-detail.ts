@@ -25,6 +25,9 @@ export class OrderDetail {
   protected readonly actionError = signal<string | null>(null);
   protected readonly cancelling = signal(false);
   protected readonly paying = signal(false);
+  // Rambursarea are doi pași: întâi întrebăm „Ești sigur?”, abia apoi trimitem cererea
+  protected readonly confirmingRefund = signal(false);
+  protected readonly refunding = signal(false);
   protected readonly labels = ORDER_STATUS_LABELS;
 
   // „Acum”, actualizat în fiecare secundă pentru numărătoarea inversă
@@ -103,12 +106,47 @@ export class OrderDetail {
     });
   }
 
+  protected askRefund(): void {
+    this.actionError.set(null);
+    this.confirmingRefund.set(true);
+  }
+
+  protected keepOrder(): void {
+    this.confirmingRefund.set(false);
+  }
+
+  // Biletele se anulează și banii se întorc pe card. Nu se poate da înapoi.
+  protected refund(): void {
+    const o = this.order();
+    if (!o || this.refunding()) return;
+    this.refunding.set(true);
+    this.actionError.set(null);
+    this.ordersService.refund(o.id).subscribe({
+      next: (updated) => {
+        this.order.set(updated);
+        this.refunding.set(false);
+        this.confirmingRefund.set(false);
+      },
+      error: (err) => {
+        this.actionError.set(errorMessage(err, 'Nu am putut face rambursarea. Încearcă din nou.'));
+        this.refunding.set(false);
+        this.confirmingRefund.set(false);
+        // Starea s-ar fi putut schimba între timp (ex. un bilet scanat): o reîncărcăm
+        this.refresh(o.id);
+      },
+    });
+  }
+
   // „Verifică din nou” după ce întârzierea a fost afișată
   protected checkAgain(): void {
     this.pollAttempts = 0;
     this.confirmationDelayed.set(false);
     const o = this.order();
     if (o) this.refresh(o.id);
+  }
+
+  protected hasUsedTicket(order: Order): boolean {
+    return order.tickets.some((t) => t.isUsed);
   }
 
   // Scurtă formă a token-ului, ca referință (token-ul întreg va fi doar în codul QR)

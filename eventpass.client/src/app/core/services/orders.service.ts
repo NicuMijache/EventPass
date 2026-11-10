@@ -31,6 +31,11 @@ export class OrdersService {
     return this.http.get(`/api/orders/${orderId}/tickets/${ticketId}/qr`, { responseType: 'blob' });
   }
 
+  // Renunță la o comandă PLĂTITĂ: biletele se anulează și banii se întorc pe card (#19)
+  refund(id: number): Observable<Order> {
+    return this.http.post<Order>(`/api/orders/${id}/refund`, {});
+  }
+
   cancel(id: number): Observable<Order> {
     return this.http.post<Order>(`/api/orders/${id}/cancel`, {});
   }

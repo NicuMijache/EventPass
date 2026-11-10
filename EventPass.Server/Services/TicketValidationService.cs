@@ -73,7 +73,7 @@ public partial class TicketValidationService
             return Log(Result(TicketValidationResult.OtherOrganizer, "Biletul este pentru un eveniment al altui organizator."), code, scannedByUserId);
 
         if (ticket.OrderStatus != OrderStatus.Paid)
-            return Log(Result(TicketValidationResult.NotPaid, "Biletul nu mai este valabil (comanda nu este plătită).", ticket), code, scannedByUserId);
+            return Log(Result(TicketValidationResult.NotPaid, NotValidMessage(ticket.OrderStatus), ticket), code, scannedByUserId);
 
         // 3. Marcăm biletul ca folosit cu UN SINGUR UPDATE, care pune condiția „încă nefolosit” chiar în WHERE.
         //    Dacă doi angajați scanează același bilet în aceeași secundă, baza de date execută cele două UPDATE-uri
@@ -83,8 +83,10 @@ public partial class TicketValidationService
         // să fie identică cu cea citită din baza de date la următoarele scanări.
         var now = DateTime.UtcNow;
         now = now.AddTicks(-(now.Ticks % 10));
+        // VoidedAt == null: biletul n-a fost anulat de o rambursare (#19). Condiția e pe rândul biletului însuși,
+        // deci dacă rambursarea îl anulează exact acum, baza de date o vede și aici.
         var updated = await _db.Tickets
-            .Where(t => t.Id == ticket.Id && !t.IsUsed && t.Order.Status == OrderStatus.Paid)
+            .Where(t => t.Id == ticket.Id && !t.IsUsed && t.VoidedAt == null && t.Order.Status == OrderStatus.Paid)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(t => t.IsUsed, true)
                 .SetProperty(t => t.UsedAt, now), ct);
@@ -101,8 +103,12 @@ public partial class TicketValidationService
 
         return current.IsUsed
             ? Log(Result(TicketValidationResult.AlreadyUsed, "Bilet deja utilizat.", ticket, current.UsedAt), code, scannedByUserId)
-            : Log(Result(TicketValidationResult.NotPaid, "Biletul nu mai este valabil (comanda nu este plătită).", ticket), code, scannedByUserId);
+            : Log(Result(TicketValidationResult.NotPaid, NotValidMessage(current.Status), ticket), code, scannedByUserId);
     }
+
+    private static string NotValidMessage(OrderStatus status) => status is OrderStatus.Refunded or OrderStatus.RefundPending
+        ? "Bilet anulat: comanda a fost rambursată."
+        : "Biletul nu mai este valabil (comanda nu este plătită).";
 
     // Acceptă aceleași forme ca scannerul din browser: tokenul întreg (cu sau fără cratime, litere mari sau mici)
     // sau codul scurt de 8 caractere de sub QR. Spațiile se ignoră (oamenii mai tastează cu spații).

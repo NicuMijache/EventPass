@@ -96,10 +96,23 @@ namespace EventPass.Server.Data.Migrations
                     b.Property<DateTime?>("PaidAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("RefundAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("RefundRequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("RefundedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<string>("StripeRefundId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("StripeSessionId")
                         .HasColumnType("text");
@@ -184,6 +197,9 @@ namespace EventPass.Server.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("VoidedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");

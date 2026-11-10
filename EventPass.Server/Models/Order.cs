@@ -5,7 +5,9 @@ public enum OrderStatus
     Pending,
     Paid,
     Cancelled,
-    Refunded
+    Refunded,
+    // Rambursarea a început: biletele sunt deja anulate, așteptăm confirmarea de la Stripe (#19)
+    RefundPending
 }
 
 public class Order
@@ -26,6 +28,13 @@ public class Order
     public DateTime? TicketsEmailedAt { get; set; }
     public int TicketsEmailAttempts { get; set; }
     public DateTime? TicketsEmailLastAttemptAt { get; set; }
+
+    // Rambursarea (#19). Banii se întorc prin Stripe; StripeRefundId e dovada (re_...).
+    // RefundAttempts: de câte ori a eșuat cererea către Stripe (procesul de fundal reîncearcă).
+    public DateTime? RefundRequestedAt { get; set; }
+    public DateTime? RefundedAt { get; set; }
+    public string? StripeRefundId { get; set; }
+    public int RefundAttempts { get; set; }
 
     public bool IsExpired(DateTime now) => Status == OrderStatus.Pending && ExpiresAt <= now;
 

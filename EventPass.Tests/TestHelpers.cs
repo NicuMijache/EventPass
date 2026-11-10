@@ -91,6 +91,40 @@ public class FakePaymentGateway : IPaymentGateway
     public void SetStatus(string sessionId, CheckoutSessionStatus status) =>
         Sessions[sessionId] = Sessions[sessionId] with { Status = status };
 
+    public int ExpireCalls { get; private set; }
+
+    // Ca la Stripe: o sesiune deschisă se închide; una plătită rămâne plătită
+    public Task<CheckoutSession?> ExpireCheckoutSessionAsync(string sessionId, CancellationToken ct = default)
+    {
+        ExpireCalls++;
+        if (GetFailsWith is not null)
+            throw GetFailsWith;
+        if (Sessions.TryGetValue(sessionId, out var s) && s.Status == CheckoutSessionStatus.Open)
+            Sessions[sessionId] = s with { Status = CheckoutSessionStatus.Expired };
+        return Task.FromResult(Sessions.GetValueOrDefault(sessionId));
+    }
+
+    // Rambursările făcute, după cheia de idempotență: aceeași cheie = aceeași rambursare (ca la Stripe)
+    public Dictionary<string, RefundResult> Refunds { get; } = new();
+    public int RefundCalls { get; private set; }
+    public Exception? RefundFailsWith { get; set; }
+
+    public Task<RefundResult> RefundAsync(string sessionId, string idempotencyKey, CancellationToken ct = default)
+    {
+        // lock: testele de cursă cer rambursări din mai multe fire deodată
+        lock (Refunds)
+        {
+            RefundCalls++;
+            if (RefundFailsWith is not null)
+                throw RefundFailsWith;
+            if (!Sessions.TryGetValue(sessionId, out var s) || !s.IsPaid)
+                throw new PaymentGatewayException($"Sesiunea {sessionId} nu are o plată încasată.", new InvalidOperationException());
+            if (!Refunds.TryGetValue(idempotencyKey, out var refund))
+                Refunds[idempotencyKey] = refund = new RefundResult($"re_test_{Refunds.Count + 1}", "succeeded");
+            return Task.FromResult(refund);
+        }
+    }
+
     // Clientul a plătit pe pagina Stripe (sesiune „complete”, „paid”)
     public void SetPaid(string sessionId, long amountMinor, string currency = "ron") =>
         Sessions[sessionId] = Sessions.TryGetValue(sessionId, out var s)
@@ -110,6 +144,9 @@ public static class TestHelpers
     };
 
     public static TokenService CreateTokenService() => new(Options.Create(Jwt));
+
+    public static OrderRefundService CreateRefundService(AppDbContext db, IPaymentGateway payments) =>
+        new(db, new SeatReservationService(db), payments, NullLogger<OrderRefundService>.Instance);
 
     // Serviciul de expirare a rezervărilor, cu dependențele lui (toate pe același DbContext, ca într-o cerere)
     public static ReservationExpiryService CreateExpiryService(AppDbContext db, IPaymentGateway payments, ITicketEmailSignal? emails = null) =>

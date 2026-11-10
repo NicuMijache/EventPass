@@ -62,6 +62,7 @@ public class AppDbContext : DbContext
             e.Property(o => o.TotalAmount).HasPrecision(10, 2);
             e.Property(o => o.Status).HasConversion<string>().HasMaxLength(20);
             e.HasIndex(o => o.StripeSessionId).IsUnique();
+            e.Property(o => o.StripeRefundId).HasMaxLength(100);
             e.HasOne(o => o.User)
                 .WithMany(u => u.Orders)
                 .HasForeignKey(o => o.UserId)

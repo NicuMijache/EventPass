@@ -3,6 +3,7 @@ namespace EventPass.Server.Services;
 // Proces de fundal care eliberează locurile rezervărilor neplătite și expirate (#18).
 // Fără el, o rezervare abandonată (clientul închide pagina) ar ține locurile pentru totdeauna:
 // anularea „la deschidere” are loc doar dacă cineva mai deschide comanda.
+// La fiecare rundă termină și rambursările rămase neterminate (#19).
 public class ReservationExpiryWorker : BackgroundService
 {
     // Cât de des verificăm. Un loc poate rămâne blocat cel mult atât după expirare.
@@ -33,6 +34,8 @@ public class ReservationExpiryWorker : BackgroundService
                     // Fiecare rundă are propriul DbContext, ca o cerere HTTP
                     using var scope = _scopes.CreateScope();
                     await scope.ServiceProvider.GetRequiredService<ReservationExpiryService>().ExpireDueAsync(stoppingToken);
+                    // Tot aici: rambursările rămase la jumătate (Stripe nu a răspuns), #19
+                    await scope.ServiceProvider.GetRequiredService<Payments.OrderRefundService>().CompletePendingAsync(stoppingToken);
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
                 {

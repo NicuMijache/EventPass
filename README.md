@@ -53,6 +53,13 @@ Carduri de test Stripe: `4242 4242 4242 4242` (succes), orice dată viitoare și
 - Un proces de fundal (`ReservationExpiryWorker`, la fiecare 30 s) anulează rezervările expirate și pune locurile înapoi în stoc, chiar dacă nimeni nu mai deschide comanda.
 - Înainte să anuleze o comandă care a ajuns la plată, întreabă Stripe: dacă s-a plătit, dar webhook-ul nu a ajuns, emite biletele în loc s-o anuleze. Dacă Stripe nu răspunde, amână (nu anulează niciodată „pe ghicite”).
 
+## Anulare și rambursare
+- **Clientul** își poate anula singur o comandă plătită, din pagina comenzii, până cu **24 de ore** înainte de eveniment, dacă niciun bilet n-a fost folosit. Primește toți banii înapoi pe card (rambursare Stripe).
+- **Organizatorul** (pentru evenimentele lui) și **Adminul** pot rambursa oricând: `POST /api/manage/orders/{id}/refund` (ex. un eveniment anulat).
+- Biletele se **anulează în aceeași clipă** în care începe rambursarea: un bilet rambursat e respins la intrare, iar un bilet deja scanat oprește rambursarea (niciodată amândouă).
+- Rambursarea la Stripe se cere cu o **cheie de idempotență**: oricâte reîncercări, banii pleacă o singură dată. Dacă Stripe nu răspunde, comanda rămâne „Rambursare în curs”, iar procesul de fundal o reîncearcă.
+- Anularea unei rezervări neplătite **închide întâi pagina de plată Stripe**, ca nimeni să nu mai poată plăti după ce locurile s-au eliberat. Dacă totuși ajunge o plată pentru o comandă anulată, banii se dau înapoi automat.
+
 ## Scannerul de bilete (de pe telefon)
 Pagina **Scanează** (`/scaneaza`) e pentru personal (rolurile Staff, Organizer, Admin). Rolul îl schimbă un Admin (`PUT /api/users/{id}/role`, din Swagger).
 
