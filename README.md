@@ -47,6 +47,12 @@ Platformă web de vânzare a biletelor la evenimente cu plată online (Stripe) �
 
 Carduri de test Stripe: `4242 4242 4242 4242` (succes), orice dată viitoare și orice CVC.
 
+## Stocul de bilete și rezervările
+- La „Rezervă”, locurile se scad din stoc printr-un singur `UPDATE ... WHERE Sold + n <= Capacity`, atomic: oricâți clienți apasă simultan, nu se vând mai multe locuri decât există (plus o regulă `CHECK` în baza de date).
+- O comandă neplătită ține locurile 15 minute; după ce clientul apasă „Plătește”, cât e valabilă sesiunea Stripe (31 de minute).
+- Un proces de fundal (`ReservationExpiryWorker`, la fiecare 30 s) anulează rezervările expirate și pune locurile înapoi în stoc, chiar dacă nimeni nu mai deschide comanda.
+- Înainte să anuleze o comandă care a ajuns la plată, întreabă Stripe: dacă s-a plătit, dar webhook-ul nu a ajuns, emite biletele în loc s-o anuleze. Dacă Stripe nu răspunde, amână (nu anulează niciodată „pe ghicite”).
+
 ## Scannerul de bilete (de pe telefon)
 Pagina **Scanează** (`/scaneaza`) e pentru personal (rolurile Staff, Organizer, Admin). Rolul îl schimbă un Admin (`PUT /api/users/{id}/role`, din Swagger).
 

@@ -6,6 +6,7 @@ using EventPass.Server.Services.Payments;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace EventPass.Tests;
@@ -75,11 +76,27 @@ public class FakePaymentGateway : IPaymentGateway
         return Task.FromResult(session);
     }
 
-    public Task<CheckoutSession?> GetCheckoutSessionAsync(string sessionId, CancellationToken ct = default) =>
-        Task.FromResult(Sessions.GetValueOrDefault(sessionId));
+    // Dacă e setată, citirea unei sesiuni eșuează (Stripe indisponibil)
+    public Exception? GetFailsWith { get; set; }
+    public int GetCalls { get; private set; }
+
+    public Task<CheckoutSession?> GetCheckoutSessionAsync(string sessionId, CancellationToken ct = default)
+    {
+        GetCalls++;
+        if (GetFailsWith is not null)
+            throw GetFailsWith;
+        return Task.FromResult(Sessions.GetValueOrDefault(sessionId));
+    }
 
     public void SetStatus(string sessionId, CheckoutSessionStatus status) =>
         Sessions[sessionId] = Sessions[sessionId] with { Status = status };
+
+    // Clientul a plătit pe pagina Stripe (sesiune „complete”, „paid”)
+    public void SetPaid(string sessionId, long amountMinor, string currency = "ron") =>
+        Sessions[sessionId] = Sessions.TryGetValue(sessionId, out var s)
+            ? s with { Status = CheckoutSessionStatus.Complete, IsPaid = true, AmountTotalMinor = amountMinor, Currency = currency }
+            : new CheckoutSession(sessionId, $"https://checkout.stripe.test/{sessionId}", CheckoutSessionStatus.Complete,
+                DateTime.UtcNow, true, amountMinor, currency);
 }
 
 public static class TestHelpers
@@ -93,6 +110,15 @@ public static class TestHelpers
     };
 
     public static TokenService CreateTokenService() => new(Options.Create(Jwt));
+
+    // Serviciul de expirare a rezervărilor, cu dependențele lui (toate pe același DbContext, ca într-o cerere)
+    public static ReservationExpiryService CreateExpiryService(AppDbContext db, IPaymentGateway payments, ITicketEmailSignal? emails = null) =>
+        new(db,
+            new SeatReservationService(db),
+            payments,
+            new OrderPaymentService(db, NullLogger<OrderPaymentService>.Instance),
+            emails ?? new FakeTicketEmailSignal(),
+            NullLogger<ReservationExpiryService>.Instance);
 
     // Fiecare test primește propria bază de date în memorie (nume unic),
     // ca testele să nu se influențeze între ele

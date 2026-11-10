@@ -90,5 +90,9 @@ public class StripePaymentGateway : IPaymentGateway
             "complete" => CheckoutSessionStatus.Complete,
             _ => CheckoutSessionStatus.Expired,
         },
-        session.ExpiresAt);
+        session.ExpiresAt,
+        // „complete” poate însemna și „plata e în curs” (ex. transfer bancar); plătit = doar „paid”
+        IsPaid: session.PaymentStatus == "paid",
+        AmountTotalMinor: session.AmountTotal ?? 0,
+        Currency: session.Currency ?? string.Empty);
 }
