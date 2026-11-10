@@ -34,6 +34,9 @@ builder.Services.AddScoped<SeatReservationService>();
 builder.Services.Configure<StripeOptions>(builder.Configuration.GetSection("Stripe"));
 builder.Services.AddSingleton<IPaymentGateway, StripePaymentGateway>();
 builder.Services.AddScoped<OrderPaymentService>();
+// Expirarea rezervărilor neplătite (#18): la deschiderea comenzii și periodic, în fundal
+builder.Services.AddScoped<ReservationExpiryService>();
+builder.Services.AddHostedService<ReservationExpiryWorker>();
 builder.Services.AddSingleton<IQrCodeGenerator, QrCodeGenerator>();
 // Validarea biletelor la intrare (#17)
 builder.Services.AddScoped<TicketValidationService>();

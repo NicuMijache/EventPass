@@ -19,7 +19,15 @@ public enum CheckoutSessionStatus
     Expired    // sesiunea nu mai poate fi folosită
 }
 
-public record CheckoutSession(string Id, string Url, CheckoutSessionStatus Status, DateTime ExpiresAt);
+// IsPaid, AmountTotalMinor și Currency: ce a încasat Stripe (folosite când verificăm noi plata, fără webhook)
+public record CheckoutSession(
+    string Id,
+    string Url,
+    CheckoutSessionStatus Status,
+    DateTime ExpiresAt,
+    bool IsPaid = false,
+    long AmountTotalMinor = 0,
+    string Currency = "");
 
 // Tot ce are nevoie aplicația de la procesatorul de plăți.
 // În aplicație: StripePaymentGateway. În teste: o variantă falsă, fără internet.

@@ -26,17 +26,20 @@ public class OrdersController : ControllerBase
     private readonly AppDbContext _db;
     private readonly SeatReservationService _seats;
     private readonly IPaymentGateway _payments;
+    private readonly ReservationExpiryService _expiry;
     private readonly StripeOptions _stripe;
 
     public OrdersController(
         AppDbContext db,
         SeatReservationService seats,
         IPaymentGateway payments,
+        ReservationExpiryService expiry,
         IOptions<StripeOptions> stripe)
     {
         _db = db;
         _seats = seats;
         _payments = payments;
+        _expiry = expiry;
         _stripe = stripe.Value;
     }
 
@@ -129,10 +132,11 @@ public class OrdersController : ControllerBase
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync(ct);
 
+        var result = new List<OrderDto>(orders.Count);
         foreach (var order in orders)
-            await ExpireIfNeededAsync(order, ct);
+            result.Add(ToDto(await ExpireIfNeededAsync(order, ct)));
 
-        return Ok(orders.Select(ToDto).ToList());
+        return Ok(result);
     }
 
     [HttpGet("{id:int}")]
@@ -142,7 +146,7 @@ public class OrdersController : ControllerBase
         if (order is null)
             return NotFound();
 
-        await ExpireIfNeededAsync(order, ct);
+        order = await ExpireIfNeededAsync(order, ct);
         return Ok(ToDto(order));
     }
 
@@ -171,7 +175,7 @@ public class OrdersController : ControllerBase
         if (order is null)
             return NotFound();
 
-        await ExpireIfNeededAsync(order, ct);
+        order = await ExpireIfNeededAsync(order, ct);
         if (order.Status == OrderStatus.Paid)
             return Conflict(new { message = "Comanda este deja plătită." });
         if (order.Status != OrderStatus.Pending)
@@ -238,12 +242,17 @@ public class OrdersController : ControllerBase
         }
     }
 
-    // O rezervare expirată se anulează când cineva se uită la ea. Comenzile pe care
-    // nu le mai deschide nimeni le va anula un proces automat (issue-ul #18).
-    private async Task ExpireIfNeededAsync(Order order, CancellationToken ct)
+    // O rezervare expirată se tratează și când clientul se uită la ea, nu doar în fundal (ReservationExpiryWorker),
+    // ca să vadă imediat starea corectă. Aceleași reguli: dacă a ajuns la plată, întâi întrebăm Stripe.
+    private async Task<Order> ExpireIfNeededAsync(Order order, CancellationToken ct)
     {
-        if (order.IsExpired(DateTime.UtcNow))
-            await _seats.CancelAsync(order, ct);
+        var outcome = await _expiry.ExpireAsync(order, ct);
+
+        // Starea s-a schimbat direct în baza de date (plată confirmată acum sau de altcineva între timp):
+        // recitim comanda, fără „memoria” DbContext-ului, care ar păstra valorile vechi
+        if (outcome is ExpiryOutcome.PaymentRecovered or ExpiryOutcome.AlreadyHandled)
+            return await OrdersQuery().AsNoTracking().SingleAsync(o => o.Id == order.Id, ct);
+        return order;
     }
 
     private IQueryable<Order> OrdersQuery() => _db.Orders

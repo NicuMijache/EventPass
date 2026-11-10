@@ -51,6 +51,7 @@ public class OrdersControllerTests : IDisposable
             db,
             new SeatReservationService(db),
             _payments,
+            TestHelpers.CreateExpiryService(db, _payments),
             Options.Create(new StripeOptions { ClientBaseUrl = "http://localhost:4200" }));
         TestHelpers.LoginAs(controller, userId, "Client");
         return (db, controller);
@@ -229,6 +230,34 @@ public class OrdersControllerTests : IDisposable
 
         Assert.IsType<NotFoundResult>(result.Result);
         Assert.Equal(2, Sold(100));
+    }
+
+    [Fact]
+    public async Task Get_RezervareExpiratDarPlatitaLaStripe_ArataComandaPlatitaCuBilete()
+    {
+        // Clientul a plătit, webhook-ul nu a ajuns, iar rezervarea a expirat între timp
+        var (db, controller) = As(1);
+        using var _ = db;
+        var order = Created(await controller.Create(Request(10, (100, 2)), default));
+        Assert.IsType<OkObjectResult>((await controller.Checkout(order.Id, default)).Result);
+        _payments.SetPaid("cs_test_1", 10000);
+        using (var clock = _database.CreateContext())
+            await clock.Orders.Where(o => o.Id == order.Id)
+                .ExecuteUpdateAsync(s => s.SetProperty(o => o.ExpiresAt, DateTime.UtcNow.AddMinutes(-1)));
+
+        var (db2, controller2) = As(1);
+        using var __ = db2;
+        var dto = Assert.IsType<OrderDto>(Assert.IsType<OkObjectResult>((await controller2.Get(order.Id, default)).Result).Value);
+
+        Assert.Equal("Paid", dto.Status);
+        Assert.Equal(2, dto.Tickets.Count);
+        Assert.Equal(2, Sold(100));   // locurile NU s-au eliberat
+
+        // Și lista „comenzile mele” arată la fel
+        var (db3, controller3) = As(1);
+        using var ___ = db3;
+        var mine = Assert.IsType<List<OrderDto>>(Assert.IsType<OkObjectResult>((await controller3.GetMine(default)).Result).Value);
+        Assert.Equal("Paid", mine.Single().Status);
     }
 
     [Fact]
