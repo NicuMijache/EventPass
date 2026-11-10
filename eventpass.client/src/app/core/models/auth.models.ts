@@ -2,6 +2,9 @@
 
 export type UserRole = 'Client' | 'Organizer' | 'Staff' | 'Admin';
 
+// Cine are voie să scaneze bilete la intrare (clienții nu)
+export const SCANNER_ROLES: readonly UserRole[] = ['Staff', 'Organizer', 'Admin'];
+
 export interface User {
   id: number;
   email: string;

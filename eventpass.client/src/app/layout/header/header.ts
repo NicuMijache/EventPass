@@ -1,5 +1,6 @@
 import { Component, computed, ElementRef, HostListener, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { SCANNER_ROLES } from '../../core/models/auth.models';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -11,6 +12,12 @@ import { AuthService } from '../../core/services/auth.service';
 export class Header {
   protected readonly auth = inject(AuthService);
   private readonly host = inject(ElementRef<HTMLElement>);
+
+  // „Scanează” apare doar pentru personal (Staff, Organizer, Admin), nu pentru clienți
+  protected readonly canScan = computed(() => {
+    const role = this.auth.user()?.role;
+    return !!role && SCANNER_ROLES.includes(role);
+  });
 
   // Meniul de pe telefon și meniul contului (deschis / închis)
   protected readonly menuOpen = signal(false);
