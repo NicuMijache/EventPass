@@ -18,7 +18,7 @@ Platformă web de vânzare a biletelor la evenimente cu plată online (Stripe) �
 | Frontend | Angular |
 | Bază de date | PostgreSQL |
 | Plăți | Stripe (Checkout + Webhooks, mod test), `Stripe.net` |
-| Cod QR | `QRCoder` (generare), `html5-qrcode` (scanare) |
+| Cod QR | `QRCoder` (generare), `jsQR` (scanare în browser; citește toate codurile noastre, spre deosebire de ZXing) |
 | Email | `MailKit` + SMTP (în dezvoltare: `smtp4dev`, server SMTP de test) |
 | API | Swagger / OpenAPI |
 | Teste | xUnit |
@@ -46,6 +46,18 @@ Platformă web de vânzare a biletelor la evenimente cu plată online (Stripe) �
 7. Pornește API-ul (`dotnet run --project EventPass.Server --launch-profile http`) și clientul (`cd eventpass.client`, `npm start`), apoi deschide http://localhost:4200
 
 Carduri de test Stripe: `4242 4242 4242 4242` (succes), orice dată viitoare și orice CVC.
+
+## Scannerul de bilete (de pe telefon)
+Pagina **Scanează** (`/scaneaza`) e pentru personal (rolurile Staff, Organizer, Admin). Rolul îl schimbă un Admin (`PUT /api/users/{id}/role`, din Swagger).
+
+Browserele permit camera **doar pe pagini securizate**: HTTPS sau `localhost`. De aceea, ca să scanezi cu telefonul:
+1. Telefonul și laptopul trebuie să fie pe aceeași rețea Wi-Fi.
+2. În folderul clientului: `npm run start:phone` (pornește Angular cu HTTPS, vizibil în rețea; API-ul rămâne pe laptop, prin proxy).
+3. Află adresa laptopului (`ipconfig`, adresa IPv4 din rețeaua Wi-Fi, de ex. `192.168.0.127`) și deschide pe telefon `https://<adresa>:4200/scaneaza`.
+4. Telefonul avertizează că certificatul nu e de încredere (e unul de test, generat local): alege „Avansat” → „Continuă”. Apoi permite accesul la cameră.
+5. Dacă nu se deschide, Windows Firewall poate bloca portul 4200 pentru rețele private; permite-l când apare fereastra.
+
+Fără cameră (sau dacă nu merge), codul se poate introduce de mână: cele 8 caractere de sub codul QR sau tot codul biletului.
 
 ## Secrete
 Nu se păstrează în repository. Se folosesc User Secrets local și GitHub Secrets în CI.

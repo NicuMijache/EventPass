@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from './core/guards/auth.guard';
+import { authGuard, guestGuard, roleGuard } from './core/guards/auth.guard';
+import { SCANNER_ROLES } from './core/models/auth.models';
 
 export const routes: Routes = [
   {
@@ -35,6 +36,12 @@ export const routes: Routes = [
     title: 'EventPass – Comanda ta',
     canActivate: [authGuard],
     loadComponent: () => import('./pages/orders/order-detail').then((m) => m.OrderDetail),
+  },
+  {
+    path: 'scaneaza',
+    title: 'EventPass – Scanează bilete',
+    canActivate: [roleGuard(SCANNER_ROLES)],
+    loadComponent: () => import('./pages/scan/scan').then((m) => m.Scan),
   },
   // Orice adresă necunoscută duce la pagina principală
   { path: '**', redirectTo: '' },
