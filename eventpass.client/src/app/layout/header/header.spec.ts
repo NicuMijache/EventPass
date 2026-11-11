@@ -57,4 +57,18 @@ describe('Header: linkul „Scanează”', () => {
     loginAs('Client');
     expect((fixture.nativeElement as HTMLElement).querySelector('a[href="/"].nav__link')).not.toBeNull();
   });
+
+  // Panoul organizatorului (#20)
+  const panelLink = () => (fixture.nativeElement as HTMLElement).querySelector('a[href="/organizator"]');
+
+  it('„Panou” apare doar pentru organizatori', () => {
+    expect(panelLink()).toBeNull();
+    for (const role of ['Client', 'Staff', 'Admin'] as UserRole[]) {
+      loginAs(role);
+      expect(panelLink()).toBeNull();
+    }
+
+    loginAs('Organizer');
+    expect(panelLink()?.textContent?.trim()).toBe('Panou');
+  });
 });

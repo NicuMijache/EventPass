@@ -53,6 +53,14 @@ Carduri de test Stripe: `4242 4242 4242 4242` (succes), orice dată viitoare și
 - Un proces de fundal (`ReservationExpiryWorker`, la fiecare 30 s) anulează rezervările expirate și pune locurile înapoi în stoc, chiar dacă nimeni nu mai deschide comanda.
 - Înainte să anuleze o comandă care a ajuns la plată, întreabă Stripe: dacă s-a plătit, dar webhook-ul nu a ajuns, emite biletele în loc s-o anuleze. Dacă Stripe nu răspunde, amână (nu anulează niciodată „pe ghicite”).
 
+## Panoul organizatorului
+Organizatorii văd în meniu **Panou** (`/organizator`): toate evenimentele lor, cu vânzările pe scurt (întâi cele care urmează). Pe pagina unui eveniment:
+- **cifrele principale**: bilete vândute din total, încasări (fără rambursări), câte bilete au fost scanate la intrare;
+- **pe categorii** (Standard, VIP...): vândute, intrate, libere, încasări;
+- **participanții**: fiecare bilet emis, cu numele și emailul cumpărătorului; căutare după nume, email sau codul scurt; filtre (au intrat / încă n-au intrat / rambursați); buton **Rambursează** pe comandă.
+
+Se numără doar comenzile plătite; rezervările neplătite apar separat. API: `GET /api/organizer/dashboard`, `GET /api/organizer/events/{id}/sales`, `GET /api/organizer/events/{id}/attendees`. Evenimentele și tipurile de bilete se creează deocamdată din Swagger.
+
 ## Anulare și rambursare
 - **Clientul** își poate anula singur o comandă plătită, din pagina comenzii, până cu **24 de ore** înainte de eveniment, dacă niciun bilet n-a fost folosit. Primește toți banii înapoi pe card (rambursare Stripe).
 - **Organizatorul** (pentru evenimentele lui) și **Adminul** pot rambursa oricând: `POST /api/manage/orders/{id}/refund` (ex. un eveniment anulat).

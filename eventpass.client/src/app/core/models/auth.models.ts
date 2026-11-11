@@ -4,6 +4,8 @@ export type UserRole = 'Client' | 'Organizer' | 'Staff' | 'Admin';
 
 // Cine are voie să scaneze bilete la intrare (clienții nu)
 export const SCANNER_ROLES: readonly UserRole[] = ['Staff', 'Organizer', 'Admin'];
+// Cine are panoul organizatorului (#20); API-ul îl permite tot doar organizatorilor
+export const ORGANIZER_ROLES: readonly UserRole[] = ['Organizer'];
 
 export interface User {
   id: number;

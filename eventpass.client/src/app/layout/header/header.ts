@@ -1,6 +1,6 @@
 import { Component, computed, ElementRef, HostListener, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { SCANNER_ROLES } from '../../core/models/auth.models';
+import { ORGANIZER_ROLES, SCANNER_ROLES } from '../../core/models/auth.models';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -17,6 +17,12 @@ export class Header {
   protected readonly canScan = computed(() => {
     const role = this.auth.user()?.role;
     return !!role && SCANNER_ROLES.includes(role);
+  });
+
+  // „Panou” (vânzări și participanți) apare doar pentru organizatori
+  protected readonly canManage = computed(() => {
+    const role = this.auth.user()?.role;
+    return !!role && ORGANIZER_ROLES.includes(role);
   });
 
   // Meniul de pe telefon și meniul contului (deschis / închis)
