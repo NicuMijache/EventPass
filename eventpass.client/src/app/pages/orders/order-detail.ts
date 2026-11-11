@@ -2,6 +2,7 @@ import { Component, computed, DestroyRef, effect, inject, input, signal } from '
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { OrdersService } from '../../core/services/orders.service';
+import { AuthService } from '../../core/services/auth.service';
 import { TicketQr } from '../../components/ticket-qr/ticket-qr';
 import { errorMessage } from '../../core/http-errors';
 import { Order, ORDER_STATUS_LABELS } from '../../core/models/order.models';
@@ -28,6 +29,11 @@ export class OrderDetail {
   // Rambursarea are doi pași: întâi întrebăm „Ești sigur?”, abia apoi trimitem cererea
   protected readonly confirmingRefund = signal(false);
   protected readonly refunding = signal(false);
+  // Retrimiterea biletelor pe email (#21)
+  protected readonly resending = signal(false);
+  protected readonly resendNote = signal<{ ok: boolean; text: string } | null>(null);
+  private emailPollsLeft = 0;
+  private readonly auth = inject(AuthService);
   protected readonly labels = ORDER_STATUS_LABELS;
 
   // „Acum”, actualizat în fiecare secundă pentru numărătoarea inversă
@@ -55,7 +61,10 @@ export class OrderDetail {
 
   constructor() {
     const timer = setInterval(() => this.now.set(Date.now()), 1000);
-    const poller = setInterval(() => this.pollForPayment(), OrderDetail.POLL_INTERVAL_MS);
+    const poller = setInterval(() => {
+      this.pollForPayment();
+      this.pollForEmail();
+    }, OrderDetail.POLL_INTERVAL_MS);
     inject(DestroyRef).onDestroy(() => {
       clearInterval(timer);
       clearInterval(poller);
@@ -149,9 +158,51 @@ export class OrderDetail {
     return order.tickets.some((t) => t.isUsed);
   }
 
+  // Cere serverului să trimită din nou emailul cu biletele (la adresa contului)
+  protected resend(): void {
+    const o = this.order();
+    if (!o || this.resending()) return;
+    this.resending.set(true);
+    this.resendNote.set(null);
+    this.ordersService.resendTickets(o.id).subscribe({
+      next: () => {
+        this.resending.set(false);
+        const email = this.auth.user()?.email;
+        this.resendNote.set({
+          ok: true,
+          text: `Trimitem biletele${email ? ' la ' + email : ''}. Dacă nu le vezi în câteva minute, verifică și dosarul Spam.`,
+        });
+        // Urmărim câteva secunde până când serverul confirmă că emailul a plecat
+        this.emailPollsLeft = OrderDetail.EMAIL_POLLS;
+        this.refresh(o.id);
+      },
+      error: (err) => {
+        this.resending.set(false);
+        this.resendNote.set({
+          ok: false,
+          text: errorMessage(err, 'Nu am putut retrimite biletele. Încearcă din nou.'),
+        });
+      },
+    });
+  }
+
   // Scurtă formă a token-ului, ca referință (token-ul întreg va fi doar în codul QR)
   protected shortCode(token: string): string {
     return token.slice(0, 8).toUpperCase();
+  }
+
+  // După o retrimitere: reîncărcăm comanda până apare din nou „trimis” (cel mult ~20 s)
+  private static readonly EMAIL_POLLS = 10;
+
+  private pollForEmail(): void {
+    const o = this.order();
+    if (this.emailPollsLeft <= 0 || !o || o.status !== 'Paid') return;
+    if (o.ticketsEmailedAt) {
+      this.emailPollsLeft = 0;
+      return;
+    }
+    this.emailPollsLeft--;
+    this.refresh(o.id);
   }
 
   private pollForPayment(): void {

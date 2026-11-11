@@ -53,6 +53,9 @@ Carduri de test Stripe: `4242 4242 4242 4242` (succes), orice dată viitoare și
 - Un proces de fundal (`ReservationExpiryWorker`, la fiecare 30 s) anulează rezervările expirate și pune locurile înapoi în stoc, chiar dacă nimeni nu mai deschide comanda.
 - Înainte să anuleze o comandă care a ajuns la plată, întreabă Stripe: dacă s-a plătit, dar webhook-ul nu a ajuns, emite biletele în loc s-o anuleze. Dacă Stripe nu răspunde, amână (nu anulează niciodată „pe ghicite”).
 
+## Retrimiterea biletelor pe email
+Pe pagina unei comenzi plătite, butonul **Retrimite biletele pe email** trimite din nou aceleași bilete (aceleași coduri QR) la adresa contului (`POST /api/orders/{id}/resend-tickets`). Cel mult o dată la 2 minute pe comandă (altfel `429`, cu antetul `Retry-After`). Dacă trimiterea eșuase de mai multe ori și procesul de fundal renunțase, retrimiterea o repornește.
+
 ## Panoul organizatorului
 Organizatorii văd în meniu **Panou** (`/organizator`): toate evenimentele lor, cu vânzările pe scurt (întâi cele care urmează). Pe pagina unui eveniment:
 - **cifrele principale**: bilete vândute din total, încasări (fără rambursări), câte bilete au fost scanate la intrare;

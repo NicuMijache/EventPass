@@ -200,6 +200,20 @@
             Arată codul QR de pe telefon la intrare.
           </p>
 
+          <div class="resend">
+            <button
+              class="btn btn--outline btn--wide"
+              type="button"
+              (click)="resend()"
+              [disabled]="resending()"
+            >
+              {{ resending() ? 'Se trimite…' : 'Retrimite biletele pe email' }}
+            </button>
+            @if (resendNote(); as note) {
+              <p [class]="note.ok ? 'form-note' : 'form-alert'" role="status">{{ note.text }}</p>
+            }
+          </div>
+
           @if (actionError(); as message) {
             <p class="form-alert" role="alert">{{ message }}</p>
           }
