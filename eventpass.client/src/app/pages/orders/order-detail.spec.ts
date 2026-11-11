@@ -2,7 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
-import { LOCALE_ID } from '@angular/core';
+import { LOCALE_ID, signal } from '@angular/core';
+import { AuthService } from '../../core/services/auth.service';
 import { registerLocaleData } from '@angular/common';
 import localeRo from '@angular/common/locales/ro';
 import { Order } from '../../core/models/order.models';
@@ -147,15 +148,13 @@ describe('OrderDetail – rambursare', () => {
     fixture.detectChanges();
     button('Da, anulează')!.click();
 
-    http
-      .expectOne('/api/orders/1/refund')
-      .flush(
-        {
-          message:
-            'Un bilet din comandă a fost deja folosit la intrare, așa că nu mai poate fi rambursată.',
-        },
-        { status: 409, statusText: 'Conflict' },
-      );
+    http.expectOne('/api/orders/1/refund').flush(
+      {
+        message:
+          'Un bilet din comandă a fost deja folosit la intrare, așa că nu mai poate fi rambursată.',
+      },
+      { status: 409, statusText: 'Conflict' },
+    );
     fixture.detectChanges();
 
     expect(el().querySelector('[role=alert]')?.textContent).toContain(
@@ -186,5 +185,88 @@ describe('OrderDetail – rambursare', () => {
     expect(text()).toContain('Rambursarea e în curs');
     expect(text()).toContain('se finalizează automat');
     expect(el().querySelector('.ticket-card')).toBeNull();
+  });
+});
+
+describe('OrderDetail – retrimiterea biletelor pe email (#21)', () => {
+  let fixture: ComponentFixture<OrderDetail>;
+  let http: HttpTestingController;
+
+  const el = () => fixture.nativeElement as HTMLElement;
+  const text = () => (el().textContent ?? '').replace(/\s+/g, ' ');
+  const resendButton = () =>
+    Array.from(el().querySelectorAll('.resend button'))[0] as HTMLButtonElement | undefined;
+  const orderRequests = () => http.match((r) => r.url === '/api/orders/1' && r.method === 'GET');
+
+  function open(order: Order) {
+    TestBed.configureTestingModule({
+      imports: [OrderDetail],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: LOCALE_ID, useValue: 'ro' },
+        {
+          provide: AuthService,
+          useValue: {
+            user: signal({ id: 1, email: 'ana@example.com', fullName: 'Ana', role: 'Client' }),
+          },
+        },
+      ],
+    });
+    http = TestBed.inject(HttpTestingController);
+    fixture = TestBed.createComponent(OrderDetail);
+    fixture.componentRef.setInput('id', '1');
+    fixture.detectChanges();
+    orderRequests()[0].flush(order);
+    fixture.detectChanges();
+  }
+
+  afterEach(() => fixture?.destroy());
+
+  it('o comandă plătită are butonul „Retrimite biletele pe email”', () => {
+    open(paidOrder());
+
+    expect(resendButton()?.textContent?.trim()).toBe('Retrimite biletele pe email');
+  });
+
+  it('comenzile neplătite sau rambursate nu au butonul', () => {
+    open(paidOrder({ status: 'Refunded', canRefund: false }));
+
+    expect(resendButton()).toBeUndefined();
+  });
+
+  it('trimite cererea, spune unde pleacă emailul și reîncarcă comanda', () => {
+    open(paidOrder());
+
+    resendButton()!.click();
+    fixture.detectChanges();
+    const req = http.expectOne('/api/orders/1/resend-tickets');
+    expect(req.request.method).toBe('POST');
+    expect(resendButton()!.disabled).toBe(true); // nu se poate apăsa de două ori cât așteaptă
+    expect(resendButton()!.textContent).toContain('Se trimite');
+
+    req.flush({ message: 'ok' }, { status: 202, statusText: 'Accepted' });
+    fixture.detectChanges();
+
+    expect(text()).toContain('Trimitem biletele la ana@example.com');
+    expect(text()).toContain('Spam');
+    expect(resendButton()!.disabled).toBe(false);
+    expect(orderRequests().length).toBe(1); // cere din nou comanda, ca să vadă când a plecat emailul
+  });
+
+  it('„prea devreme” (429) afișează mesajul serverului', () => {
+    open(paidOrder());
+
+    resendButton()!.click();
+    http
+      .expectOne('/api/orders/1/resend-tickets')
+      .flush(
+        { message: 'Emailul a fost trimis de curând. Poți cere din nou peste 90 de secunde.' },
+        { status: 429, statusText: 'Too Many Requests' },
+      );
+    fixture.detectChanges();
+
+    expect(el().querySelector('.resend .form-alert')?.textContent).toContain('peste 90 de secunde');
   });
 });

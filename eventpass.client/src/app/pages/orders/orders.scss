@@ -392,3 +392,10 @@
 .refund__question {
   font-weight: 600;
 }
+
+// ---- Retrimiterea biletelor pe email (#21) ----
+.resend {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}

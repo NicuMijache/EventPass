@@ -36,6 +36,11 @@ export class OrdersService {
     return this.http.post<Order>(`/api/orders/${id}/refund`, {});
   }
 
+  // Trimite din nou emailul cu biletele, la adresa contului (#21). 202 = pleacă în câteva secunde.
+  resendTickets(id: number): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`/api/orders/${id}/resend-tickets`, {});
+  }
+
   cancel(id: number): Observable<Order> {
     return this.http.post<Order>(`/api/orders/${id}/cancel`, {});
   }
