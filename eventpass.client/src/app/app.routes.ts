@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard, roleGuard } from './core/guards/auth.guard';
-import { SCANNER_ROLES } from './core/models/auth.models';
+import { ORGANIZER_ROLES, SCANNER_ROLES } from './core/models/auth.models';
 
 export const routes: Routes = [
   {
@@ -42,6 +42,19 @@ export const routes: Routes = [
     title: 'EventPass – Scanează bilete',
     canActivate: [roleGuard(SCANNER_ROLES)],
     loadComponent: () => import('./pages/scan/scan').then((m) => m.Scan),
+  },
+  // Panoul organizatorului (#20): vânzări și participanți
+  {
+    path: 'organizator',
+    title: 'EventPass – Panou organizator',
+    canActivate: [roleGuard(ORGANIZER_ROLES)],
+    loadComponent: () => import('./pages/organizer/organizer-dashboard').then((m) => m.OrganizerDashboard),
+  },
+  {
+    path: 'organizator/evenimente/:id',
+    title: 'EventPass – Vânzări eveniment',
+    canActivate: [roleGuard(ORGANIZER_ROLES)],
+    loadComponent: () => import('./pages/organizer/organizer-event').then((m) => m.OrganizerEvent),
   },
   // Orice adresă necunoscută duce la pagina principală
   { path: '**', redirectTo: '' },

@@ -1,0 +1,295 @@
+<section class="container page">
+  <a class="back" routerLink="/organizator">
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.5" />
+    </svg>
+    Evenimentele tale
+  </a>
+
+  @if (loadError(); as message) {
+    <p class="form-alert" role="alert">{{ message }}</p>
+  } @else if (sales(); as s) {
+    <header class="head head--event">
+      <div>
+        <p class="eyebrow">
+          {{ s.startsAt | date: 'EEEE, d MMMM y · HH:mm' }} · {{ s.venue }}, {{ s.city }}
+        </p>
+        <h1 class="display">{{ s.title }}</h1>
+        @if (!s.isPublished) {
+          <span class="tag">Nepublicat</span>
+        }
+      </div>
+      <button class="btn btn--outline" type="button" (click)="refresh()">Actualizează</button>
+    </header>
+
+    <!-- Cifrele principale -->
+    <dl class="kpis">
+      <div class="kpi">
+        <dt class="kpi__label">Bilete vândute</dt>
+        <dd class="kpi__value">
+          {{ s.totals.ticketsSold }} <span class="kpi__of">din {{ s.totals.capacity }}</span>
+        </dd>
+        <div
+          class="meter"
+          role="img"
+          [attr.aria-label]="
+            percent(s.totals.ticketsSold, s.totals.capacity) + '% din locuri vândute'
+          "
+        >
+          <span
+            class="meter__fill"
+            [style.width.%]="percent(s.totals.ticketsSold, s.totals.capacity)"
+          ></span>
+        </div>
+        <p class="kpi__note">
+          {{ s.totals.available }} libere
+          @if (s.totals.reserved > 0) {
+            · {{ s.totals.reserved }} rezervate, neplătite încă
+          }
+        </p>
+      </div>
+      <div class="kpi">
+        <dt class="kpi__label">Încasări</dt>
+        <dd class="kpi__value">
+          {{ s.totals.revenue | number: '1.0-2' }} <span class="kpi__of">lei</span>
+        </dd>
+        <p class="kpi__note">
+          @if (s.totals.refundedOrders > 0) {
+            {{ s.totals.refundedAmount | number: '1.0-2' }} lei rambursați ({{
+              s.totals.refundedOrders
+            }}
+            {{ s.totals.refundedOrders === 1 ? 'comandă' : 'comenzi' }})
+          } @else {
+            Nicio rambursare
+          }
+        </p>
+      </div>
+      <div class="kpi">
+        <dt class="kpi__label">Au intrat</dt>
+        <dd class="kpi__value">
+          {{ s.totals.validated }} <span class="kpi__of">din {{ s.totals.ticketsSold }}</span>
+        </dd>
+        <div
+          class="meter"
+          role="img"
+          [attr.aria-label]="
+            percent(s.totals.validated, s.totals.ticketsSold) + '% din bilete scanate'
+          "
+        >
+          <span
+            class="meter__fill"
+            [style.width.%]="percent(s.totals.validated, s.totals.ticketsSold)"
+          ></span>
+        </div>
+        <p class="kpi__note">
+          {{ percent(s.totals.validated, s.totals.ticketsSold) }}% din biletele vândute au fost
+          scanate
+        </p>
+      </div>
+    </dl>
+
+    <!-- Pe categorii -->
+    <section class="block" aria-labelledby="types-title">
+      <h2 id="types-title" class="block__title">Pe categorii</h2>
+      @if (s.ticketTypes.length === 0) {
+        <p class="form-note">Evenimentul nu are încă tipuri de bilete.</p>
+      } @else {
+        <ul class="types">
+          @for (t of s.ticketTypes; track t.id) {
+            <li class="type">
+              <div class="type__name">
+                <span>{{ t.name }}</span>
+                <span class="type__price">{{ t.price | number: '1.0-2' }} lei</span>
+              </div>
+              <div class="type__bar">
+                <div
+                  class="meter"
+                  role="img"
+                  [attr.aria-label]="t.name + ': ' + t.ticketsSold + ' vândute din ' + t.capacity"
+                >
+                  <span
+                    class="meter__fill"
+                    [style.width.%]="percent(t.ticketsSold, t.capacity)"
+                  ></span>
+                </div>
+              </div>
+              <dl class="type__figures">
+                <div>
+                  <dt>Vândute</dt>
+                  <dd>{{ t.ticketsSold }} / {{ t.capacity }}</dd>
+                </div>
+                <div>
+                  <dt>Au intrat</dt>
+                  <dd>{{ t.validated }}</dd>
+                </div>
+                <div>
+                  <dt>Libere</dt>
+                  <dd>{{ t.available }}</dd>
+                </div>
+                <div>
+                  <dt>Încasări</dt>
+                  <dd>{{ t.revenue | number: '1.0-2' }} lei</dd>
+                </div>
+              </dl>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <!-- Participanți -->
+    <section class="block" aria-labelledby="people-title">
+      <div class="block__head">
+        <h2 id="people-title" class="block__title">Participanți</h2>
+        @if (attendees(); as a) {
+          <p class="block__count">{{ a.total }} {{ a.total === 1 ? 'bilet' : 'bilete' }}</p>
+        }
+      </div>
+
+      <div class="toolbar">
+        <label class="field toolbar__search">
+          <span class="visually-hidden">Caută</span>
+          <input
+            class="field__input"
+            type="search"
+            [formControl]="search"
+            placeholder="Caută după nume, email sau cod"
+            autocomplete="off"
+          />
+        </label>
+        <div class="chips" role="group" aria-label="Filtru">
+          @for (f of filters; track f.value) {
+            <button
+              class="chip"
+              type="button"
+              [class.chip--on]="filter() === f.value"
+              [attr.aria-pressed]="filter() === f.value"
+              (click)="setFilter(f.value)"
+            >
+              {{ f.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (notice(); as n) {
+        <p [class]="n.ok ? 'form-note' : 'form-alert'" role="status">{{ n.text }}</p>
+      }
+
+      @if (attendeesError(); as message) {
+        <p class="form-alert" role="alert">{{ message }}</p>
+      } @else if (attendees(); as a) {
+        @if (a.items.length === 0) {
+          <p class="form-note">
+            {{
+              search.value || filter() !== 'all'
+                ? 'Niciun participant nu se potrivește.'
+                : 'Încă nu s-a vândut niciun bilet.'
+            }}
+          </p>
+        } @else {
+          <div class="people" [class.people--loading]="loadingAttendees()">
+            <div class="people__row people__row--head" aria-hidden="true">
+              <span>Cod</span><span>Participant</span><span>Bilet</span><span>Stare</span
+              ><span></span>
+            </div>
+            <ul class="people__list">
+              @for (p of a.items; track p.ticketId; let i = $index) {
+                <li class="people__row" [class.people__row--void]="p.isVoided">
+                  <span class="people__code">{{ p.shortCode }}</span>
+                  <span class="people__who">
+                    <span class="people__name">{{ p.holderName }}</span>
+                    <span class="people__email"
+                      >{{ p.holderEmail }} · comanda #{{ p.orderId }}</span
+                    >
+                  </span>
+                  <span class="people__type">{{ p.ticketTypeName }}</span>
+                  <span class="people__state">
+                    @if (p.isUsed) {
+                      <span class="state state--in">A intrat {{ p.usedAt | date: 'HH:mm' }}</span>
+                    } @else if (p.isVoided) {
+                      <span class="state state--void">{{
+                        p.orderStatus === 'Refunded' ? 'Rambursat' : 'Rambursare în curs'
+                      }}</span>
+                    } @else {
+                      <span class="state">Valabil</span>
+                    }
+                  </span>
+                  <span class="people__action">
+                    @if (p.canRefund && isFirstOfOrder(a.items, i)) {
+                      @if (confirmOrder() === p.orderId) {
+                        <span
+                          class="confirm"
+                          role="alertdialog"
+                          [attr.aria-label]="'Rambursezi comanda #' + p.orderId + '?'"
+                        >
+                          <span class="confirm__text"
+                            >Rambursezi comanda #{{ p.orderId }} ({{
+                              ticketsInOrder(a.items, p.orderId)
+                            }}
+                            bilete)?</span
+                          >
+                          <button
+                            class="btn btn--small"
+                            type="button"
+                            (click)="refund(p.orderId)"
+                            [disabled]="refunding() !== null"
+                          >
+                            {{ refunding() === p.orderId ? 'Se rambursează…' : 'Da' }}
+                          </button>
+                          <button
+                            class="btn btn--outline btn--small"
+                            type="button"
+                            (click)="cancelRefund()"
+                            [disabled]="refunding() !== null"
+                          >
+                            Nu
+                          </button>
+                        </span>
+                      } @else {
+                        <button class="link-button" type="button" (click)="askRefund(p.orderId)">
+                          Rambursează
+                        </button>
+                      }
+                    }
+                  </span>
+                </li>
+              }
+            </ul>
+          </div>
+
+          @if (lastPage(a) > 1) {
+            <nav class="pager" aria-label="Pagini">
+              <button
+                class="btn btn--outline btn--small"
+                type="button"
+                (click)="goTo(a.page - 1)"
+                [disabled]="a.page <= 1"
+              >
+                Înapoi
+              </button>
+              <span class="pager__info"
+                >{{ (a.page - 1) * a.pageSize + 1 }}–{{
+                  (a.page - 1) * a.pageSize + a.items.length
+                }}
+                din {{ a.total }}</span
+              >
+              <button
+                class="btn btn--outline btn--small"
+                type="button"
+                (click)="goTo(a.page + 1)"
+                [disabled]="a.page >= lastPage(a)"
+              >
+                Înainte
+              </button>
+            </nav>
+          }
+        }
+      } @else {
+        <p class="eyebrow">Se încarcă participanții…</p>
+      }
+    </section>
+  } @else {
+    <p class="eyebrow">Se încarcă…</p>
+  }
+</section>

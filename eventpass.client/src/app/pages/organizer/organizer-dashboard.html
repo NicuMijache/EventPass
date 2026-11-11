@@ -1,0 +1,91 @@
+<section class="container page">
+  <header class="head">
+    <p class="eyebrow">Panou organizator</p>
+    <h1 class="display">Evenimentele tale</h1>
+    <p class="lead">
+      Vânzările, încasările și câte bilete au fost scanate la intrare, pentru fiecare eveniment.
+    </p>
+  </header>
+
+  @if (error(); as message) {
+    <p class="form-alert" role="alert">{{ message }}</p>
+  } @else if (events(); as list) {
+    @if (list.length === 0) {
+      <div class="empty">
+        <p class="empty__title">Nu ai încă niciun eveniment.</p>
+        <p class="form-note">
+          Evenimentele se creează deocamdată din API (Swagger):
+          <code>POST /api/organizer/events</code>.
+        </p>
+      </div>
+    } @else {
+      <ul class="event-list">
+        @for (ev of list; track ev.id) {
+          <li>
+            <a
+              class="event-row"
+              [class.event-row--past]="isPast(ev)"
+              [routerLink]="['/organizator/evenimente', ev.id]"
+            >
+              <div class="event-row__main">
+                <p class="event-row__date">{{ ev.startsAt | date: 'EEE, d MMM y · HH:mm' }}</p>
+                <p class="event-row__title">{{ ev.title }}</p>
+                <p class="event-row__place">
+                  {{ ev.venue }}, {{ ev.city }}
+                  @if (!ev.isPublished) {
+                    <span class="tag">Nepublicat</span>
+                  }
+                  @if (isPast(ev)) {
+                    <span class="tag">A avut loc</span>
+                  }
+                </p>
+              </div>
+
+              <dl class="event-row__stats">
+                <div class="mini">
+                  <dt>Vândute</dt>
+                  <dd>
+                    <span class="mini__value">{{ ev.totals.ticketsSold }}</span>
+                    <span class="mini__of">&nbsp;/ {{ ev.totals.capacity }}</span>
+                  </dd>
+                  <div
+                    class="meter meter--thin"
+                    role="img"
+                    [attr.aria-label]="
+                      percent(ev.totals.ticketsSold, ev.totals.capacity) + '% din locuri vândute'
+                    "
+                  >
+                    <span
+                      class="meter__fill"
+                      [style.width.%]="percent(ev.totals.ticketsSold, ev.totals.capacity)"
+                    ></span>
+                  </div>
+                </div>
+                <div class="mini">
+                  <dt>Încasări</dt>
+                  <dd>
+                    <span class="mini__value">{{ ev.totals.revenue | number: '1.0-2' }}</span>
+                    <span class="mini__of">&nbsp;lei</span>
+                  </dd>
+                </div>
+                <div class="mini">
+                  <dt>Validate</dt>
+                  <dd>
+                    <span class="mini__value">{{ ev.totals.validated }}</span>
+                    <span class="mini__of">&nbsp;/ {{ ev.totals.ticketsSold }}</span>
+                  </dd>
+                </div>
+              </dl>
+
+              <svg class="event-row__arrow" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5" />
+              </svg>
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  } @else {
+    <p class="eyebrow">Se încarcă…</p>
+  }
+</section>

@@ -13,6 +13,9 @@
     <nav class="nav" [class.nav--open]="menuOpen()" aria-label="Navigare principală">
       <a class="nav__link" routerLink="/" routerLinkActive="nav__link--active"
          [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenus()">Evenimente</a>
+      @if (canManage()) {
+        <a class="nav__link" routerLink="/organizator" routerLinkActive="nav__link--active" (click)="closeMenus()">Panou</a>
+      }
       @if (canScan()) {
         <a class="nav__link" routerLink="/scaneaza" routerLinkActive="nav__link--active" (click)="closeMenus()">Scanează</a>
       }
