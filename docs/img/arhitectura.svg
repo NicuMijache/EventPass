@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 430" width="880" height="430" font-family="Segoe UI, system-ui, sans-serif">
+  <title>Arhitectura EventPass</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="880" height="430" fill="#ffffff"/>
+
+  <!-- Serverul -->
+  <rect x="230" y="45" width="400" height="265" rx="10" fill="#f6f6f4" stroke="#999" stroke-dasharray="5 4"/>
+  <text x="246" y="66" font-size="13" font-weight="600" fill="#555">Server .NET 10 (ASP.NET Core)</text>
+
+  <!-- Casete -->
+  <g font-size="13" text-anchor="middle" fill="#111">
+    <rect x="20" y="75" width="150" height="58" rx="8" fill="#fff" stroke="#111" stroke-width="1.5"/>
+    <text x="95" y="99" font-weight="600">Browser</text>
+    <text x="95" y="117" fill="#555">Angular 22 (SPA)</text>
+
+    <rect x="255" y="80" width="170" height="52" rx="8" fill="#fff" stroke="#111" stroke-width="1.5"/>
+    <text x="340" y="102" font-weight="600">Web API</text>
+    <text x="340" y="120" fill="#555">Controllers</text>
+
+    <rect x="255" y="170" width="170" height="56" rx="8" fill="#fff" stroke="#111" stroke-width="1.5"/>
+    <text x="340" y="192" font-weight="600">Servicii</text>
+    <text x="340" y="210" fill="#555">rezervări · plăți · QR</text>
+
+    <rect x="445" y="170" width="165" height="56" rx="8" fill="#fff" stroke="#111" stroke-width="1.5"/>
+    <text x="527" y="192" font-weight="600">Proces de fundal</text>
+    <text x="527" y="210" fill="#555">trimitere email</text>
+
+    <rect x="345" y="252" width="170" height="40" rx="8" fill="#fff" stroke="#111" stroke-width="1.5"/>
+    <text x="430" y="277" font-weight="600">EF Core</text>
+
+    <rect x="690" y="75" width="170" height="58" rx="8" fill="#fff" stroke="#635bff" stroke-width="1.5"/>
+    <text x="775" y="99" font-weight="600">Stripe Checkout</text>
+    <text x="775" y="117" fill="#555">plăți (mod test)</text>
+
+    <rect x="690" y="170" width="170" height="56" rx="8" fill="#fff" stroke="#111" stroke-width="1.5"/>
+    <text x="775" y="192" font-weight="600">Server SMTP</text>
+    <text x="775" y="210" fill="#555">smtp4dev (dezvoltare)</text>
+
+    <!-- PostgreSQL (cilindru) -->
+    <path d="M360 345 v50 a70 12 0 0 0 140 0 v-50" fill="#fff" stroke="#111" stroke-width="1.5"/>
+    <ellipse cx="430" cy="345" rx="70" ry="12" fill="#fff" stroke="#111" stroke-width="1.5"/>
+    <text x="430" y="384" font-weight="600">PostgreSQL 18</text>
+  </g>
+
+  <!-- Săgeți -->
+  <g fill="none" stroke="#333" stroke-width="1.5" marker-end="url(#arrow)">
+    <path d="M170 106 H253"/>                         <!-- Browser → Web API -->
+    <path d="M340 132 V168"/>                         <!-- Web API → Servicii -->
+    <path d="M340 226 V244 H400 V250"/>               <!-- Servicii → EF Core -->
+    <path d="M527 226 V244 H460 V250"/>               <!-- Proces → EF Core -->
+    <path d="M430 292 V331"/>                         <!-- EF Core → PostgreSQL -->
+    <path d="M688 92 H427"/>                          <!-- Stripe → Web API (webhook) -->
+    <path d="M400 170 V150 H730 V135"/>               <!-- Servicii → Stripe (sesiune) -->
+    <path d="M610 198 H688"/>                         <!-- Proces → SMTP -->
+  </g>
+  <path d="M95 75 V22 H800 V73" fill="none" stroke="#635bff" stroke-width="1.5" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+
+  <!-- Etichete pe săgeți -->
+  <g font-size="11.5" fill="#333">
+    <text x="178" y="98">HTTP</text>
+    <text x="178" y="124">+ JWT</text>
+    <text x="440" y="86">webhook semnat (plata confirmată)</text>
+    <text x="440" y="146">creează sesiunea de plată</text>
+    <text x="614" y="191">email</text>
+    <text x="614" y="216">cu bilete</text>
+    <text x="300" y="17" fill="#635bff">clientul plătește cu cardul direct pe pagina Stripe</text>
+  </g>
+</svg>

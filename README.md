@@ -111,6 +111,10 @@ dotnet tool restore
 dotnet tool run reportgenerator -reports:"coverage/**/coverage.cobertura.xml" -targetdir:coverage/report -reporttypes:HtmlInline "-classfilters:-System.*;-Microsoft.*;-EventPass.Server.Data.Migrations.*"
 ```
 
+## Documentație
+- [Raport 2 — Proiectare și implementare minimală](docs/raport-2.md) (și în [PDF](docs/raport-2.pdf)): arhitectura, modelul de date, fluxul plății, API-ul, securitatea, testele, capturi de ecran.
+- PDF-ul se regenerează din Markdown (cu diagramele): în `docs/tools`, `npm install`, apoi `npm run raport-2`.
+
 ## Secrete
 Nu se păstrează în repository. Se folosesc User Secrets local și GitHub Secrets în CI.
 
