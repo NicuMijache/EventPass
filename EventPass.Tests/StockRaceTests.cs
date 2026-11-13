@@ -12,6 +12,7 @@ namespace EventPass.Tests;
 
 // Teste de CURSĂ pentru stoc (#18): multe „cereri” în paralel, fiecare cu propria conexiune la aceeași bază de date
 // (un fișier SQLite temporar). Așa cererile chiar se întrec, ca pe server, nu rulează una după alta.
+[Trait("Regula", "Stoc")]
 public sealed class StockRaceTests : IDisposable
 {
     private const int Seats = 5;

@@ -7,6 +7,7 @@ using static EventPass.Tests.PaymentTestData;
 
 namespace EventPass.Tests;
 
+[Trait("Regula", "EmitereWebhook")]
 public class OrderPaymentServiceTests : IDisposable
 {
     private readonly SqliteTestDatabase _database = new();

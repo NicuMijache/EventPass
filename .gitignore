@@ -429,3 +429,7 @@ FodyWeavers.xsd
 
 # Imagini încărcate de organizatori (nu intră în Git)
 EventPass.Server/wwwroot/uploads/
+
+# Raportul de acoperire generat local (dotnet test --collect, reportgenerator)
+coverage/
+.tools/
