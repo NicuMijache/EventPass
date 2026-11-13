@@ -1,0 +1,12 @@
+{
+  "name": "eventpass-docs-tools",
+  "private": true,
+  "type": "module",
+  "description": "Generează PDF-ul rapoartelor din Markdown (diagramele Mermaid incluse), prin Chrome.",
+  "scripts": {
+    "raport-2": "node build-pdf.mjs ../raport-2.md ../raport-2.pdf"
+  },
+  "dependencies": {
+    "marked": "15.0.7"
+  }
+}
