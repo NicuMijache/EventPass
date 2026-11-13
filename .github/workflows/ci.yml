@@ -33,9 +33,11 @@ jobs:
       # Excludem codul generat automat (migrări EF, cod generat de .NET), care nu se testează.
       - name: Coverage report
         if: always()
+        # ReportGenerator se instalează separat (nu prin `dotnet tool restore`): restaurarea în paralel a celor
+        # două unelte din manifest le încurcă pe unele versiuni de SDK („comanda reportgenerator nu e în pachet”)
         run: |
-          dotnet tool restore
-          dotnet tool run reportgenerator -reports:"coverage/**/coverage.cobertura.xml" -targetdir:coverage/report \
+          dotnet tool install dotnet-reportgenerator-globaltool --version 5.6.0 --tool-path ./.tools
+          ./.tools/reportgenerator -reports:"coverage/**/coverage.cobertura.xml" -targetdir:coverage/report \
             -reporttypes:"MarkdownSummaryGithub;HtmlInline" "-classfilters:-System.*;-Microsoft.*;-EventPass.Server.Data.Migrations.*"
           cat coverage/report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
 

@@ -432,3 +432,4 @@ EventPass.Server/wwwroot/uploads/
 
 # Raportul de acoperire generat local (dotnet test --collect, reportgenerator)
 coverage/
+.tools/
