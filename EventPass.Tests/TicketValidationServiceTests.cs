@@ -13,6 +13,7 @@ using static EventPass.Tests.PaymentTestData;
 
 namespace EventPass.Tests;
 
+[Trait("Regula", "BiletUnic")]
 public class TicketValidationServiceTests : IDisposable
 {
     private const int StaffId = 5;

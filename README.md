@@ -90,6 +90,27 @@ Fiecare cod citit se verifică pe server (`POST /api/tickets/validate`):
 
 Dacă două telefoane scanează același bilet în același moment, intră o singură persoană: marcarea se face printr-un singur `UPDATE ... WHERE IsUsed = false`, atomic în baza de date.
 
+## Teste
+- Backend (xUnit): `dotnet test` — inclusiv teste de cursă cu conexiuni paralele la o bază SQLite reală.
+- Frontend (Vitest): în folderul clientului, `npm test -- --watch=false`.
+
+Regulile critice au etichete și se pot rula separat:
+
+| Regulă | Comandă | Ce garantează |
+|---|---|---|
+| Bilet de unică folosință | `dotnet test --filter Regula=BiletUnic` | un bilet intră o singură dată, chiar cu scanări simultane; un bilet rambursat e respins |
+| Stoc | `dotnet test --filter Regula=Stoc` | nu se vând mai multe locuri decât capacitatea; rezervările expirate eliberează locurile o singură dată |
+| Emitere doar din webhook | `dotnet test --filter Regula=EmitereWebhook` | biletele apar doar după confirmarea Stripe (semnătură verificată), niciodată pentru că un client spune „am plătit” |
+
+`CriticalRulesGuardTests` sunt „gărzi”: verifică în codul sursă că biletele se creează, comenzile devin plătite, biletele se marchează folosite și stocul se modifică **fiecare într-un singur loc**, și că orice endpoint care modifică date cere login (în afară de cont nou, login și webhook-ul Stripe).
+
+**Acoperirea** (ce procent din cod rulează testele) apare la fiecare rulare CI, în pagina rulării (Summary), iar raportul HTML se descarcă de acolo (`coverage-report`). Local:
+```
+dotnet test --collect:"XPlat Code Coverage" --results-directory coverage
+dotnet tool restore
+dotnet tool run reportgenerator -reports:"coverage/**/coverage.cobertura.xml" -targetdir:coverage/report -reporttypes:HtmlInline "-classfilters:-System.*;-Microsoft.*;-EventPass.Server.Data.Migrations.*"
+```
+
 ## Secrete
 Nu se păstrează în repository. Se folosesc User Secrets local și GitHub Secrets în CI.
 

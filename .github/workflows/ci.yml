@@ -25,8 +25,26 @@ jobs:
       - name: Build
         run: dotnet build EventPass.slnx --no-restore --configuration Release
 
+      # Testele + măsurarea acoperirii (ce linii din cod au fost rulate de teste)
       - name: Test
-        run: dotnet test EventPass.slnx --no-build --configuration Release
+        run: dotnet test EventPass.slnx --no-build --configuration Release --collect:"XPlat Code Coverage" --results-directory coverage
+
+      # Raportul de acoperire: rezumat pe pagina rulării (Summary) + raport HTML descărcabil.
+      # Excludem codul generat automat (migrări EF, cod generat de .NET), care nu se testează.
+      - name: Coverage report
+        if: always()
+        run: |
+          dotnet tool restore
+          dotnet tool run reportgenerator -reports:"coverage/**/coverage.cobertura.xml" -targetdir:coverage/report \
+            -reporttypes:"MarkdownSummaryGithub;HtmlInline" "-classfilters:-System.*;-Microsoft.*;-EventPass.Server.Data.Migrations.*"
+          cat coverage/report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/report
 
   frontend:
     name: Frontend (Angular)

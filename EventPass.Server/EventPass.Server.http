@@ -1,6 +1,7 @@
 @EventPass.Server_HostAddress = http://localhost:5003
 
-GET {{EventPass.Server_HostAddress}}/weatherforecast/
+# Evenimentele publicate (fără login)
+GET {{EventPass.Server_HostAddress}}/api/events
 Accept: application/json
 
 ###

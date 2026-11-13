@@ -10,6 +10,7 @@ namespace EventPass.Tests;
 
 // Expirarea rezervărilor (#18). Comanda 1 din PaymentTestData: Pending, sesiunea cs_test_1,
 // ține 2 × Standard (tipul 100) și 1 × VIP (tipul 101).
+[Trait("Regula", "Stoc")]
 public class ReservationExpiryServiceTests : IDisposable
 {
     private readonly SqliteTestDatabase _database = new();

@@ -15,6 +15,7 @@ namespace EventPass.Tests;
 
 // Testează endpoint-ul webhook cu mesaje SEMNATE EXACT CA DE STRIPE (HMAC-SHA256),
 // deci verificarea semnăturii rulează pe bune, nu e simulată.
+[Trait("Regula", "EmitereWebhook")]
 public class StripeWebhookControllerTests : IDisposable
 {
     private const string Secret = "whsec_secret_de_test";
