@@ -72,3 +72,14 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # Verifică doar că docker-compose.yml e valid (nu pornește containere).
+  # Parola vine din .env.example, ca să nu depindă de un .env care nu e în repository.
+  docker-compose:
+    name: Docker Compose (validare)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validează docker-compose.yml
+        run: docker compose --env-file .env.example config --quiet

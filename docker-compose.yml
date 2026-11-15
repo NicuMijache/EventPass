@@ -1,0 +1,33 @@
+name: eventpass
+
+services:
+  db:
+    image: postgres:18.7
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-eventpass}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Lipseste POSTGRES_PASSWORD - copiaza .env.example in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-eventpass}
+    ports:
+      # 5433 pe laptop -> 5432 in container (5432 de pe laptop e PostgreSQL-ul local)
+      # 127.0.0.1 = accesibil doar de pe acest calculator, nu din retea
+      - "127.0.0.1:5433:5432"
+    volumes:
+      # Postgres 18+: volumul se monteaza la /var/lib/postgresql, nu la .../data
+      - eventpass-db-data:/var/lib/postgresql
+    healthcheck:
+      # $$ = variabila se citeste in interiorul containerului, nu in Compose
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  smtp:
+    image: rnwood/smtp4dev:3.16.1
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:2525:25"   # SMTP: aplicatia trimite emailuri aici
+      - "127.0.0.1:5025:80"   # interfata web: http://localhost:5025
+
+volumes:
+  eventpass-db-data:
