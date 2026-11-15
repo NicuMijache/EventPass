@@ -29,23 +29,52 @@ Platformă web de vânzare a biletelor la evenimente cu plată online (Stripe) �
 ## Cerințe
 - Visual Studio Community (workload ASP.NET) și .NET 10 SDK
 - Node.js LTS și Angular CLI
-- PostgreSQL (local sau Docker)
 - Git, `dotnet-ef`
 - Cont Stripe în mod test + Stripe CLI (pentru webhook-uri locale)
-- `smtp4dev` pentru emailuri de test (unealtă locală a proiectului, se instalează cu `dotnet tool restore`)
+- **Varianta cu Docker (recomandată):** Docker Desktop (pe Windows, cu WSL2 activ)
+- **Varianta fără Docker:** PostgreSQL 18 instalat local și `smtp4dev` (unealtă locală a proiectului, se instalează cu `dotnet tool restore`)
 
 ## Rulare
-1. `git clone` al repository-ului
-2. În folderul clientului: `npm install`
+
+Baza de date (PostgreSQL) și serverul de email de test (smtp4dev) pot rula în containere Docker (varianta 1) sau direct pe calculator (varianta 2). Aplicația (API-ul .NET și clientul Angular) rulează oricum pe calculator.
+
+### Varianta 1: cu Docker (recomandată)
+1. `git clone` al repository-ului, apoi în folderul clientului: `npm install`
+2. Creează fișierul `.env` din șablon și pune o parolă în el (`.env` nu intră în git):
+   `copy .env.example .env` (Windows) sau `cp .env.example .env`
+3. Pornește totul cu o singură comandă: `docker compose up -d`
+   Verifică cu `docker compose ps`: serviciul `db` trebuie să fie `healthy`. Pe calculator, containerele sunt la:
+   - PostgreSQL: `localhost:5433` (portul 5432 rămâne liber pentru un PostgreSQL local)
+   - SMTP de test: `localhost:2525`, iar emailurile se văd la http://localhost:5025
+4. Setează secretele (User Secrets): șirul de conexiune `Host=localhost;Port=5433;Database=eventpass;Username=eventpass;Password=<parola din .env>`, `Jwt:Key`, `SeedAdmin:Email` și `SeedAdmin:Password`, `Stripe:SecretKey`, `Stripe:WebhookSecret`
+   (alternativ, doar pentru fereastra curentă de PowerShell: `$env:ConnectionStrings__DefaultConnection = "..."`; o variabilă de mediu are prioritate peste User Secrets)
+5. Creează schema în baza nouă: `dotnet ef database update --project EventPass.Server`
+6. Pornește webhook-urile locale (secretul `whsec_...` pentru `Stripe:WebhookSecret` îl afișează `stripe listen --print-secret`):
+   `stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded --forward-to http://localhost:5003/api/webhooks/stripe`
+7. Pornește API-ul (`dotnet run --project EventPass.Server --launch-profile http`) și clientul (`cd eventpass.client`, `npm start`), apoi deschide http://localhost:4200
+
+Oprire: `docker compose down` oprește containerele și **păstrează** datele (volumul `eventpass_eventpass-db-data`). `docker compose down -v` șterge și volumul, deci **pierzi toate datele din baza de test**.
+
+### Varianta 2: fără Docker
+1. `git clone` al repository-ului, apoi în folderul clientului: `npm install`
+2. Instalează PostgreSQL 18 local (portul 5432) și creează baza `eventpass`
 3. Setează secretele (User Secrets): șirul de conexiune la baza de date, `Jwt:Key`, `SeedAdmin:Email` și `SeedAdmin:Password`, `Stripe:SecretKey`, `Stripe:WebhookSecret` (pentru un server SMTP real: și `Smtp:Username`, `Smtp:Password`)
 4. `dotnet ef database update --project EventPass.Server`
 5. Pornește serverul SMTP de test (emailurile se văd în browser, la http://localhost:5025):
    `dotnet tool restore` apoi `dotnet tool run smtp4dev -- --smtpport=2525 --urls=http://localhost:5025 --db="" --nousersettings`
-6. Pornește webhook-urile locale: `stripe listen --forward-to http://localhost:5003/api/webhooks/stripe`
+6. Pornește webhook-urile locale: `stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded --forward-to http://localhost:5003/api/webhooks/stripe`
    (secretul `whsec_...` pentru `Stripe:WebhookSecret` îl afișează `stripe listen --print-secret`)
 7. Pornește API-ul (`dotnet run --project EventPass.Server --launch-profile http`) și clientul (`cd eventpass.client`, `npm start`), apoi deschide http://localhost:4200
 
 Carduri de test Stripe: `4242 4242 4242 4242` (succes), orice dată viitoare și orice CVC.
+
+### Probleme frecvente
+- **Port ocupat** (`5433`, `2525` sau `5025`): află ce îl folosește cu `netstat -ano | findstr :5433`. Dacă ai `smtp4dev` pornit local, oprește-l, altfel intră în conflict cu containerul. Poți schimba și portul din `docker-compose.yml`.
+- **Docker Desktop oprit** (`failed to connect to the docker API ... dockerDesktopLinuxEngine`): pornește Docker Desktop și așteaptă să apară „Engine running”.
+- **WSL2**: Docker Desktop are nevoie de el. Verifică cu `wsl --status`; dacă lipsește, `wsl --install` și repornește calculatorul. Virtualizarea trebuie să fie activă în BIOS.
+- **Am schimbat parola în `.env`, dar baza o refuză**: Postgres citește parola doar la prima pornire. Ori pui parola veche înapoi, ori ștergi datele cu `docker compose down -v` și pornești din nou.
+- **Plata trece, dar comanda rămâne „Pending”** (webhook-ul primește 400): `Stripe:WebhookSecret` din secrete diferă de cel afișat de `stripe listen --print-secret`.
+- **`stripe listen` cere `--events`**: pe versiunile noi ale Stripe CLI trebuie dată lista de evenimente, ca în comenzile de mai sus.
 
 ## Stocul de bilete și rezervările
 - La „Rezervă”, locurile se scad din stoc printr-un singur `UPDATE ... WHERE Sold + n <= Capacity`, atomic: oricâți clienți apasă simultan, nu se vând mai multe locuri decât există (plus o regulă `CHECK` în baza de date).
