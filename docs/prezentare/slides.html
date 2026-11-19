@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<title>EventPass — prezentare</title>
+<!-- Sursa prezentării. Fiecare <section class="slide"> e un slide de 1920 × 1080; <aside class="notes"> sunt notele vorbitorului.
+     PNG, PDF și PPTX se generează cu: node docs/tools/build-slides.mjs (vezi comentariul din acel fișier). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff; --surface: #f6f6f4; --text: #0b0b0b; --muted: #6f6f6c; --border: #e2e2df; --strong: #cfcfcc;
+    --ok: #1b7f3b; --ok-bg: #eaf5ee; --warn: #a15c00; --warn-bg: #fbf1e3; --bad: #c62828; --bad-bg: #fbeaea;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #888; }
+  body { font-family: 'Manrope', system-ui, sans-serif; color: var(--text); -webkit-font-smoothing: antialiased; }
+  .slide { width: 1920px; height: 1080px; background: var(--bg); position: relative; overflow: hidden; margin: 0 auto 40px;
+           padding: 110px 130px 100px; display: flex; flex-direction: column; break-after: page; }
+  .notes { display: none; }
+  .kicker { font-size: 26px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 22px; }
+  h1, h2 { font-weight: 700; letter-spacing: -0.04em; line-height: 1.02; margin: 0; }
+  h2 { font-size: 84px; margin-bottom: 56px; }
+  p, li { font-size: 40px; line-height: 1.35; margin: 0; }
+  .muted { color: var(--muted); }
+  .foot { position: absolute; left: 130px; right: 130px; bottom: 44px; display: flex; justify-content: space-between;
+          font-size: 22px; color: #a3a3a0; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+  .logo { display: inline-flex; align-items: center; gap: 14px; }
+  .logo svg { width: 38px; height: 26px; }
+  code, .mono { font-family: 'JetBrains Mono', Consolas, monospace; }
+  .grid { display: grid; gap: 28px; }
+  .card { background: var(--surface); border-radius: 28px; padding: 40px 44px; }
+  .card h3 { font-size: 42px; letter-spacing: -0.02em; margin: 0 0 14px; }
+  .card p { font-size: 32px; color: #3a3a38; }
+  .card .num { font-size: 104px; color: var(--text); }
+  .card .label { font-size: 30px; color: var(--muted); }
+  .pill { display: inline-block; border: 2px solid var(--text); border-radius: 999px; padding: 10px 24px; font-size: 29px; font-weight: 600; white-space: nowrap; }
+  .shot { border-radius: 22px; border: 2px solid var(--border); box-shadow: 0 30px 60px -30px rgba(0,0,0,.25); display: block; }
+  .big { font-size: 140px; font-weight: 700; letter-spacing: -0.05em; line-height: 1; }
+  .num { font-size: 104px; font-weight: 700; letter-spacing: -0.05em; line-height: 1; }
+  .label { font-size: 30px; color: var(--muted); margin-top: 12px; }
+  .sql { background: #0b0b0b; color: #f2f2f0; border-radius: 24px; padding: 40px 48px; font-size: 34px; line-height: 1.5; white-space: pre; }
+  .sql .k { color: #9ad1ff; } .sql .c { color: #ffd479; }
+  .arrow { font-size: 48px; color: var(--muted); }
+  .row { display: flex; align-items: center; gap: 28px; }
+  .tag-ok { color: var(--ok); } .tag-bad { color: var(--bad); } .tag-warn { color: var(--warn); }
+  .divider { background: #0b0b0b; color: #fff; }
+  .divider .kicker { color: #9a9a96; }
+  .divider .foot { color: #6b6b68; }
+</style>
+</head>
+<body>
+
+<!-- 1. Titlu -->
+<section class="slide" data-time="0:30">
+  <div style="margin-top:40px" class="logo">
+    <svg viewBox="0 0 38 26"><path d="M3 3h32v6a4 4 0 0 0 0 8v6H3v-6a4 4 0 0 0 0-8z" fill="none" stroke="#0b0b0b" stroke-width="2.4"/><path d="M24 6v3M24 12v3M24 18v2" stroke="#0b0b0b" stroke-width="2.4"/></svg>
+    <span style="font-size:30px;font-weight:700;letter-spacing:.32em">EVENTPASS</span>
+  </div>
+  <h1 style="font-size:150px;margin-top:150px;max-width:1500px">Bilete care intră o singură dată</h1>
+  <p style="font-size:44px;margin-top:44px;max-width:1400px" class="muted">Vânzare de bilete cu plată online (Stripe), cod QR pe email și validare la intrare, de pe telefon.</p>
+  <div style="margin-top:auto;display:flex;gap:80px;font-size:30px">
+    <div><div class="muted">Student</div><div style="font-weight:600;margin-top:6px">Nicu Mijache · CR4.S2A</div></div>
+    <div><div class="muted">Coordonator</div><div style="font-weight:600;margin-top:6px">C. Ivanescu</div></div>
+    <div><div class="muted">Proiect III</div><div style="font-weight:600;margin-top:6px">Instrumente pentru dezvoltarea programelor</div></div>
+  </div>
+  <aside class="notes">Bună ziua. Sunt Nicu Mijache și vă prezint EventPass, o aplicație web de vânzare a biletelor la evenimente. Ideea centrală e în titlu: un bilet trebuie să intre o singură dată, oricâte copii ar exista după el. În următoarele zece minute vă arăt problema, cum am construit soluția, trei probleme grele pe care le-am rezolvat, apoi o demonstrație live.</aside>
+</section>
+
+<!-- 2. Problema -->
+<section class="slide" data-time="0:45">
+  <p class="kicker">Problema</p>
+  <h2>Un bilet e doar o imagine. Se poate copia.</h2>
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:10px">
+    <div class="card"><h3>Frauda la intrare</h3><p>Aceeași poză a biletului, trimisă la cinci prieteni.</p></div>
+    <div class="card"><h3>Vânzare peste capacitate</h3><p>Doi clienți cumpără ultimul loc în aceeași secundă.</p></div>
+    <div class="card"><h3>Plată „pe cuvânt”</h3><p>Site-ul crede browserul că plata a reușit.</p></div>
+    <div class="card"><h3>Evidență manuală</h3><p>Organizatorul nu știe câte bilete a vândut și cine a intrat.</p></div>
+  </div>
+  <div class="foot"><span>EventPass</span><span>2</span></div>
+  <aside class="notes">Pornesc de la patru probleme reale. Biletul e doar o imagine: dacă îl trimiți la cinci prieteni, fără o verificare centrală intră toți cinci. Apoi concurența: doi oameni apasă „cumpără” pe ultimul loc în aceeași secundă. A treia: dacă site-ul crede ce spune browserul, poți obține bilete fără să plătești. Și, în fine, organizatorul ține evidența de mână.</aside>
+</section>
+
+<!-- 3. Soluția într-o frază -->
+<section class="slide" data-time="0:40">
+  <p class="kicker">Soluția, într-o frază</p>
+  <h2 style="font-size:96px;max-width:1650px">Serverul decide: plata o confirmă doar Stripe, iar un bilet trece o singură dată.</h2>
+  <div class="row" style="margin-top:auto;margin-bottom:60px;gap:16px">
+    <span class="pill">Organizatorul publică</span><span class="arrow">→</span>
+    <span class="pill">Clientul rezervă</span><span class="arrow">→</span>
+    <span class="pill">Plătește pe Stripe</span><span class="arrow">→</span>
+    <span class="pill">QR pe email</span><span class="arrow">→</span>
+    <span class="pill" style="background:#0b0b0b;color:#fff">Staff-ul scanează</span>
+  </div>
+  <div class="foot"><span>EventPass</span><span>3</span></div>
+  <aside class="notes">Soluția, într-o frază: serverul decide totul. Browserul doar afișează. Plata o confirmă numai Stripe, printr-un mesaj semnat, iar biletul e marcat folosit în baza de date, o singură dată. Fluxul complet arată așa: organizatorul publică, clientul rezervă și plătește pe pagina Stripe, primește codul QR pe email, iar personalul îl scanează cu telefonul.</aside>
+</section>
+
+<!-- 4. Arhitectura -->
+<section class="slide" data-time="0:50">
+  <p class="kicker">Arhitectura</p>
+  <h2>Trei componente proprii, două externe</h2>
+  <svg viewBox="0 0 1660 600" style="width:1660px;height:600px;font-family:Manrope,sans-serif">
+    <defs><marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#0b0b0b"/></marker></defs>
+    <g font-size="34" text-anchor="middle">
+      <rect x="0" y="40" width="330" height="140" rx="26" fill="#f6f6f4"/><text x="165" y="102" font-weight="700">Browser</text><text x="165" y="146" fill="#6f6f6c" font-size="28">Angular 22</text>
+      <rect x="0" y="400" width="330" height="140" rx="26" fill="#f6f6f4"/><text x="165" y="462" font-weight="700">Telefon staff</text><text x="165" y="506" fill="#6f6f6c" font-size="28">scanner jsQR</text>
+      <rect x="560" y="140" width="540" height="300" rx="30" fill="#fff" stroke="#0b0b0b" stroke-width="4"/>
+      <text x="830" y="210" font-weight="700" font-size="40">API .NET 10</text>
+      <text x="830" y="262" fill="#3a3a38" font-size="28">JWT + roluri · servicii</text>
+      <text x="830" y="304" fill="#3a3a38" font-size="28">2 procese de fundal:</text>
+      <text x="830" y="346" fill="#3a3a38" font-size="28">rezervări expirate · emailuri</text>
+      <text x="830" y="398" fill="#6f6f6c" font-size="26">EF Core 10</text>
+      <rect x="1330" y="40" width="330" height="140" rx="26" fill="#0b0b0b"/><text x="1495" y="102" font-weight="700" fill="#fff">Stripe</text><text x="1495" y="146" fill="#bdbdba" font-size="28">plăți (mod test)</text>
+      <rect x="1330" y="400" width="330" height="140" rx="26" fill="#0b0b0b"/><text x="1495" y="462" font-weight="700" fill="#fff">SMTP</text><text x="1495" y="506" fill="#bdbdba" font-size="28">smtp4dev</text>
+      <rect x="680" y="510" width="300" height="90" rx="45" fill="#f6f6f4"/><text x="830" y="567" font-weight="700">PostgreSQL 18</text>
+    </g>
+    <g stroke="#0b0b0b" stroke-width="3.5" fill="none">
+      <path d="M330 110 L560 220" marker-end="url(#m)"/>
+      <path d="M330 470 L560 360" marker-end="url(#m)"/>
+      <path d="M1330 110 L1100 220" marker-end="url(#m)"/>
+      <path d="M1100 360 L1330 470" marker-end="url(#m)"/>
+      <path d="M830 440 L830 510" marker-end="url(#m)" marker-start="url(#m)"/>
+    </g>
+    <g font-size="27" fill="#3a3a38">
+      <text x="360" y="92">JSON + JWT</text>
+      <text x="1112" y="98">webhook semnat</text>
+      <text x="1225" y="388">MailKit</text>
+    </g>
+  </svg>
+  <div class="foot"><span>EventPass</span><span>4</span></div>
+  <aside class="notes">Arhitectura e clasică, în trei straturi. Browserul și telefonul personalului vorbesc doar cu API-ul, în JSON, cu un token JWT. API-ul, scris în .NET 10, conține regulile de business și două procese de fundal: unul eliberează rezervările expirate, celălalt trimite emailurile. Datele stau în PostgreSQL. Stripe e singurul care confirmă plata, printr-un webhook semnat, iar emailurile pleacă prin SMTP.</aside>
+</section>
+
+<!-- 5. Modelul de date -->
+<section class="slide" data-time="0:45">
+  <p class="kicker">Modelul de date</p>
+  <h2>Regulile stau chiar în baza de date</h2>
+  <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:70px;align-items:start">
+    <svg viewBox="0 0 900 580" style="width:900px;height:580px;font-family:Manrope,sans-serif">
+      <g stroke="#0b0b0b" stroke-width="3" fill="none">
+        <path d="M250 45 H325"/><path d="M575 45 H650"/><path d="M125 90 V235"/><path d="M250 280 H325"/>
+        <path d="M575 270 L690 90"/><path d="M125 325 V505 H560"/><path d="M800 90 V450"/>
+      </g>
+      <g font-size="32" font-weight="700" text-anchor="middle">
+        <rect x="0" y="0" width="250" height="90" rx="20" fill="#f6f6f4"/><text x="125" y="57">User</text>
+        <rect x="325" y="0" width="250" height="90" rx="20" fill="#f6f6f4"/><text x="450" y="57">Event</text>
+        <rect x="650" y="0" width="250" height="90" rx="20" fill="#f6f6f4"/><text x="775" y="57">TicketType</text>
+        <rect x="0" y="235" width="250" height="90" rx="20" fill="#f6f6f4"/><text x="125" y="292">Order</text>
+        <rect x="325" y="235" width="250" height="90" rx="20" fill="#f6f6f4"/><text x="450" y="292">OrderItem</text>
+        <rect x="560" y="450" width="340" height="120" rx="20" fill="#0b0b0b"/><text x="730" y="503" fill="#fff">Ticket</text>
+        <text x="730" y="543" fill="#bdbdba" font-size="25" font-weight="500">Token · IsUsed · VoidedAt</text>
+      </g>
+    </svg>
+    <div class="grid" style="gap:26px">
+      <div class="card" style="padding:30px 36px"><p class="mono" style="font-size:30px;font-weight:600">CHECK Sold ≤ Capacity</p><p style="font-size:28px;margin-top:8px" class="muted">nu se vinde peste capacitate</p></div>
+      <div class="card" style="padding:30px 36px"><p class="mono" style="font-size:30px;font-weight:600">UNIQUE Ticket.Token</p><p style="font-size:28px;margin-top:8px" class="muted">un singur bilet pe cod QR</p></div>
+      <div class="card" style="padding:30px 36px"><p class="mono" style="font-size:30px;font-weight:600">Pending → Paid → Refunded</p><p style="font-size:28px;margin-top:8px" class="muted">fiecare pas: un UPDATE cu condiție</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>EventPass</span><span>5</span></div>
+  <aside class="notes">Modelul de date are șase tabele. Important e că regulile critice nu stau doar în cod, ci chiar în baza de date. O regulă CHECK spune că locurile vândute nu pot depăși capacitatea. Tokenul biletului, care e conținutul codului QR, are un index unic. Iar comanda trece prin stările Pending, Paid și Refunded, și fiecare trecere e un singur UPDATE cu condiție, pe care o să-l vedeți imediat.</aside>
+</section>
+
+<!-- 6. Fluxul de plată -->
+<section class="slide" data-time="0:50">
+  <p class="kicker">Cumpărare și plată</p>
+  <h2>Întoarcerea pe site nu e dovada plății</h2>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:10px">
+    <div class="card"><p class="num" style="font-size:72px">1</p><h3 style="margin-top:18px">Rezervă</h3><p>locurile scad atomic, 15 minute</p></div>
+    <div class="card"><p class="num" style="font-size:72px">2</p><h3 style="margin-top:18px">Stripe Checkout</h3><p>cardul nu trece prin serverul nostru</p></div>
+    <div class="card" style="background:#0b0b0b"><p class="num" style="font-size:72px;color:#fff">3</p><h3 style="margin-top:18px;color:#fff">Webhook semnat</h3><p style="color:#cfcfcc">semnătură, sumă, monedă verificate</p></div>
+    <div class="card"><p class="num" style="font-size:72px">4</p><h3 style="margin-top:18px">Bilete + email</h3><p>QR unic; emailul din fundal</p></div>
+  </div>
+  <p style="margin-top:56px;font-size:36px" class="muted">Webhook pierdut? Procesul de fundal întreabă Stripe înainte să anuleze o rezervare.</p>
+  <div class="foot"><span>EventPass</span><span>6</span></div>
+  <aside class="notes">Fluxul de plată are patru pași. Rezervarea scade locurile atomic și le ține 15 minute. Plata se face pe pagina Stripe, deci datele cardului nu ajung niciodată la noi. Pasul decisiv e al treilea: comanda devine plătită doar când Stripe trimite un mesaj semnat, în care verific semnătura, suma și moneda. Întoarcerea clientului pe site nu dovedește nimic. Iar dacă webhook-ul se pierde, procesul de fundal întreabă Stripe înainte să anuleze rezervarea.</aside>
+</section>
+
+<!-- 7. Problema grea 1 -->
+<section class="slide" data-time="0:55">
+  <p class="kicker">Problema grea 1 · stocul</p>
+  <h2>30 de clienți, 5 locuri</h2>
+  <div class="sql"><span class="k">UPDATE</span> "TicketTypes" <span class="k">SET</span> "Sold" = "Sold" + @q
+<span class="k">WHERE</span> "Id" = @id <span class="k">AND</span> <span class="c">"Sold" + @q &lt;= "Capacity"</span></div>
+  <div class="row" style="margin-top:56px;gap:70px">
+    <div><p class="num">5 / 30</p><p class="label">reușesc în testul de cursă</p></div>
+    <p style="font-size:38px;max-width:900px">Verificarea și scăderea sunt <b>o singură comandă</b>: baza de date le execută pe rând. 0 rânduri = „s-au epuizat”.</p>
+  </div>
+  <div class="foot"><span>EventPass</span><span>7</span></div>
+  <aside class="notes">Prima problemă grea: ultimul loc. Varianta naivă citește câte locuri sunt libere, apoi scrie, iar între citire și scriere doi clienți pot vedea amândoi „un loc liber”. Eu fac verificarea și scăderea într-o singură comandă SQL: condiția e chiar în WHERE. Baza de date le execută pe rând, iar al doilea client modifică zero rânduri și primește „s-au epuizat”. Testul pornește 30 de clienți în paralel pe 5 locuri și exact 5 reușesc.</aside>
+</section>
+
+<!-- 8. Problema grea 2 -->
+<section class="slide" data-time="0:55">
+  <p class="kicker">Problema grea 2 · plata</p>
+  <h2>Același webhook, trimis de două ori</h2>
+  <div class="sql"><span class="k">UPDATE</span> "Orders" <span class="k">SET</span> "Status" = 'Paid'
+<span class="k">WHERE</span> "Id" = @id <span class="k">AND</span> <span class="c">"Status" = 'Pending'</span></div>
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:48px">
+    <div class="card"><h3>Idempotent</h3><p>Al doilea mesaj găsește comanda deja <b>Paid</b>: niciun bilet în plus.</p></div>
+    <div class="card"><h3>Rambursare</h3><p>Cheie de idempotență la Stripe: banii pleacă o singură dată.</p></div>
+  </div>
+  <div class="foot"><span>EventPass</span><span>8</span></div>
+  <aside class="notes">A doua problemă: Stripe garantează că mesajul ajunge, dar nu că ajunge o singură dată. Dacă procesez de două ori, emit bilete de două ori. Soluția e același tipar: trecerea în Paid are condiția „încă Pending” în WHERE, în aceeași tranzacție cu emiterea biletelor. Al doilea mesaj nu mai găsește nimic de schimbat. La rambursare folosesc o cheie de idempotență, deci Stripe întoarce banii o singură dată, oricâte reîncercări aș face.</aside>
+</section>
+
+<!-- 9. Problema grea 3 -->
+<section class="slide" data-time="1:00">
+  <p class="kicker">Problema grea 3 · intrarea</p>
+  <h2>Același bilet, două telefoane</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:44px">
+    <img class="shot" src="img/scanner-valid.png" style="width:100%;height:540px;object-fit:contain;background:#fff">
+    <img class="shot" src="img/scanner-deja-utilizat.png" style="width:100%;height:540px;object-fit:contain;background:#fff">
+  </div>
+  <p style="margin-top:36px;font-size:34px"><code style="font-size:30px">UPDATE … WHERE NOT "IsUsed" AND "VoidedAt" IS NULL</code> <span class="muted">: unul intră, celălalt vede „Deja utilizat”. Rambursare și scanare simultane: niciodată amândouă.</span></p>
+  <div class="foot"><span>EventPass</span><span>9</span></div>
+  <aside class="notes">A treia problemă e chiar la intrare. Două telefoane scanează același cod în aceeași secundă. Marcarea biletului e iar un UPDATE cu condiția „nefolosit și neanulat” în WHERE: primul primește verde, „Bilet valid”, al doilea galben, „Deja utilizat”, cu ora primei scanări. Același mecanism rezolvă și cazul în care organizatorul rambursează exact când omul e scanat: ori intră, ori primește banii, niciodată amândouă.</aside>
+</section>
+
+<!-- 10. Securitate -->
+<section class="slide" data-time="0:45">
+  <p class="kicker">Securitate</p>
+  <h2>Nu am încredere în browser</h2>
+  <div class="grid" style="grid-template-columns:1fr 1fr;gap:52px 60px;margin-top:20px">
+    <p style="font-size:44px"><b>Cardul</b> <span class="muted">— doar pe pagina Stripe</span></p>
+    <p style="font-size:44px"><b>Plata</b> <span class="muted">— doar prin webhook semnat</span></p>
+    <p style="font-size:44px"><b>Biletul</b> <span class="muted">— GUID aleator, 122 de biți</span></p>
+    <p style="font-size:44px"><b>Parola</b> <span class="muted">— hash PBKDF2 cu sare</span></p>
+    <p style="font-size:44px"><b>Accesul</b> <span class="muted">— JWT + roluri; 404 la altcineva</span></p>
+    <p style="font-size:44px"><b>Secretele</b> <span class="muted">— User Secrets, nu în git</span></p>
+  </div>
+  <p style="margin-top:auto;margin-bottom:40px;font-size:32px" class="muted">Un test „gardă” pică dacă un endpoint nou care modifică date uită de <code>[Authorize]</code>.</p>
+  <div class="foot"><span>EventPass</span><span>10</span></div>
+  <aside class="notes">Pe scurt, la securitate principiul e să nu am încredere în browser. Cardul nu trece pe la noi. Plata vine doar prin mesajul semnat. Biletul are un cod aleator care nu se poate ghici. Parolele sunt salvate doar ca hash. Fiecare endpoint cere token și rol, iar resursele altcuiva răspund 404. Secretele nu sunt în repository. Și am un test care pică dacă cineva adaugă un endpoint nou fără autentificare.</aside>
+</section>
+
+<!-- 11. Testare -->
+<section class="slide" data-time="0:55">
+  <p class="kicker">Testare · cifre măsurate</p>
+  <h2>486 de teste, toate verzi</h2>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:28px">
+    <div class="card"><p class="num">300</p><p class="label">backend, xUnit</p></div>
+    <div class="card"><p class="num">186</p><p class="label">frontend, Vitest</p></div>
+    <div class="card"><p class="num">79,4%</p><p class="label">linii acoperite (backend)</p></div>
+    <div class="card"><p class="num">39/40</p><p class="label">rulări CI reușite</p></div>
+  </div>
+  <p style="margin-top:56px;font-size:36px">Reguli critice etichetate: <b>36</b> bilet unic · <b>21</b> stoc · <b>34</b> emitere din webhook. Teste de cursă pe o bază SQLite <b>reală</b>.</p>
+  <div class="foot"><span>EventPass</span><span>11</span></div>
+  <aside class="notes">Toate cifrele de aici le-am măsurat. Am 300 de teste pe backend și 186 pe frontend, toate trec. Acoperirea backend-ului e de 79,4 la sută; ce lipsește sunt mai ales clasele care vorbesc cu Stripe și cu serverul de email, verificate prin probe reale. Regulile critice au etichete și se pot rula separat. Testele de cursă rulează pe o bază de date reală, nu pe un simulator, altfel ar fi trecut și pe cod greșit.</aside>
+</section>
+
+<!-- 12. Cum am lucrat -->
+<section class="slide" data-time="0:40">
+  <p class="kicker">Cum am lucrat</p>
+  <h2>Fiecare cerință are un drum în GitHub</h2>
+  <div class="row" style="gap:22px;flex-wrap:wrap">
+    <span class="pill">Cerință CF-11</span><span class="arrow">→</span>
+    <span class="pill">Issue #17</span><span class="arrow">→</span>
+    <span class="pill">feature/validare-bilet</span><span class="arrow">→</span>
+    <span class="pill">PR #37 · CI verde</span><span class="arrow">→</span>
+    <span class="pill" style="background:#0b0b0b;color:#fff">main</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:70px">
+    <div><p class="num">24</p><p class="label">issue-uri</p></div>
+    <div><p class="num">3</p><p class="label">milestone-uri</p></div>
+    <div><p class="num">20</p><p class="label">Pull Request-uri</p></div>
+    <div><p class="num">43</p><p class="label">commit-uri pe main</p></div>
+  </div>
+  <div class="foot"><span>EventPass</span><span>12</span></div>
+  <aside class="notes">Am lucrat ca într-o echipă: fiecare cerință din Raportul 1 are un issue, fiecare issue o ramură și un Pull Request, iar un PR intră în main doar cu CI verde. De exemplu, validarea biletului: cerința CF-11, issue-ul 17, ramura feature/validare-bilet, PR-ul 37. În total: 24 de issue-uri în 3 milestone-uri, 20 de PR-uri și 43 de commit-uri.</aside>
+</section>
+
+<!-- 13. Demonstrație -->
+<section class="slide divider" data-time="6:00">
+  <p class="kicker">Demonstrație live</p>
+  <h1 style="font-size:150px;margin-top:20px">Să cumpărăm un bilet.</h1>
+  <div style="margin-top:auto;margin-bottom:40px;font-size:36px;line-height:1.7;color:#d6d6d3">
+    cumpăr → plătesc pe Stripe → primesc QR → scanez cu telefonul<br>
+    scanez din nou → panoul se actualizează → rambursez → biletul e respins
+  </div>
+  <div class="foot"><span>EventPass</span><span>13</span></div>
+  <aside class="notes">Acum trec la demonstrație. Urmez scenariul din docs/demo.md: un client cumpără două bilete și plătește pe Stripe, cu cardul de test; arăt emailul cu codurile QR; scanez un bilet cu telefonul, apoi din nou; arăt panoul organizatorului; fac o rambursare și scanez un bilet rambursat. Dacă ceva nu merge, am capturile și introducerea manuală a codului ca plan B.</aside>
+</section>
+
+<!-- 14. Limitări -->
+<section class="slide" data-time="0:40">
+  <p class="kicker">Limitări, spuse cinstit</p>
+  <h2>Ce nu face încă</h2>
+  <ul style="padding-left:44px;display:grid;gap:18px">
+    <li>Evenimentele se creează din <b>Swagger</b>, nu din site.</li>
+    <li>Staff-ul nu e atribuit pe evenimente (RB-08).</li>
+    <li>Fără bilet PDF atașat; QR-ul e în corpul emailului.</li>
+    <li>Local, cu Stripe în mod test: fără producție, fără bani reali.</li>
+    <li>Fără limită la încercările de login.</li>
+  </ul>
+  <div class="foot"><span>EventPass</span><span>14</span></div>
+  <aside class="notes">Câteva limitări, spuse cinstit. Evenimentele se creează din Swagger: API-ul e complet și testat, dar nu am apucat paginile din site. Personalul nu e atribuit pe evenimente, cum scria în regula RB-08. Biletul e în corpul emailului, nu ca PDF. Totul rulează local, cu Stripe în mod test. Și login-ul nu limitează încercările. Ca pași următori: paginile de administrare și punerea în producție.</aside>
+</section>
+
+<!-- 15. Concluzii -->
+<section class="slide" data-time="0:40">
+  <p class="kicker">Concluzii</p>
+  <h2>Ce am învățat</h2>
+  <div class="grid" style="grid-template-columns:1fr 1fr;gap:28px">
+    <div class="card"><h3>Corectitudinea vine din baza de date</h3><p>Un UPDATE cu condiție bate zece <code>if</code>-uri.</p></div>
+    <div class="card"><h3>Nu ai încredere în client</h3><p>Prețul, plata și biletul le decide serverul.</p></div>
+    <div class="card"><h3>Sistemele externe pică</h3><p>Fiecare eșec are un comportament gândit și un test.</p></div>
+    <div class="card"><h3>Testele de cursă se pot scrie</h3><p>Doar pe o bază de date reală.</p></div>
+  </div>
+  <div class="foot"><span>EventPass</span><span>15</span></div>
+  <aside class="notes">În concluzie, patru lucruri am învățat. Corectitudinea vine din baza de date: un UPDATE cu condiție rezolvă ce zece if-uri nu rezolvă. Nu ai încredere în client. Sistemele externe pică, deci fiecare eșec trebuie gândit și testat. Și testele de concurență se pot scrie, dacă baza de date din teste e una reală.</aside>
+</section>
+
+<!-- 16. Întrebări -->
+<section class="slide divider" data-time="0:10">
+  <p class="kicker">Mulțumesc</p>
+  <h1 style="font-size:180px;margin-top:40px">Întrebări?</h1>
+  <p style="margin-top:auto;margin-bottom:40px;font-size:34px;color:#bdbdba">github.com/NicuMijache/EventPass · raportul final: docs/raport-final.pdf</p>
+  <div class="foot"><span>EventPass</span><span>16</span></div>
+  <aside class="notes">Vă mulțumesc. Codul, raportul final și scenariul demonstrației sunt în repository. Aștept întrebările dumneavoastră.</aside>
+</section>
+
+</body>
+</html>

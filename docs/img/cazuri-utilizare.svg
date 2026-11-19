@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600" font-family="Segoe UI, system-ui, sans-serif">
+  <title>Diagrama cazurilor de utilizare EventPass</title>
+  <defs>
+    <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L10 5 L0 10" fill="none" stroke="#555" stroke-width="1.4"/>
+    </marker>
+    <g id="actor" stroke="#111" stroke-width="1.8" fill="none">
+      <circle cx="0" cy="-34" r="11" fill="#fff"/>
+      <path d="M0 -23 V6 M-16 -12 H16 M0 6 L-13 28 M0 6 L13 28"/>
+    </g>
+  </defs>
+  <rect width="1000" height="600" fill="#fff"/>
+
+  <!-- Sistemul -->
+  <rect x="190" y="20" width="620" height="560" rx="16" fill="#f6f6f4" stroke="#999"/>
+  <text x="210" y="46" font-size="15" font-weight="700" fill="#333">EventPass</text>
+
+  <!-- Actori -->
+  <g font-size="14" font-weight="600" text-anchor="middle" fill="#111">
+    <use href="#actor" x="90" y="120"/><text x="90" y="170">Client</text>
+    <use href="#actor" x="90" y="330"/><text x="90" y="380">Organizer</text>
+    <use href="#actor" x="90" y="500"/><text x="90" y="550">Admin</text>
+    <use href="#actor" x="910" y="420"/><text x="910" y="470">Staff</text>
+    <use href="#actor" x="910" y="150"/><text x="910" y="200">Stripe</text>
+    <text x="910" y="216" font-size="11.5" font-weight="400" fill="#666">(sistem extern)</text>
+  </g>
+
+  <!-- Cazuri de utilizare -->
+  <g font-size="13" text-anchor="middle" fill="#111">
+    <ellipse cx="340" cy="78" rx="110" ry="22" fill="#fff" stroke="#111" stroke-width="1.4"/><text x="340" y="83">Creează cont / login</text>
+    <ellipse cx="340" cy="130" rx="110" ry="22" fill="#fff" stroke="#111" stroke-width="1.4"/><text x="340" y="135">Caută și filtrează</text>
+    <ellipse cx="340" cy="182" rx="110" ry="22" fill="#fff" stroke="#111" stroke-width="2.2"/><text x="340" y="187" font-weight="600">Cumpără bilete</text>
+    <ellipse cx="340" cy="234" rx="110" ry="22" fill="#fff" stroke="#111" stroke-width="1.4"/><text x="340" y="239">Retrimite biletele</text>
+    <ellipse cx="340" cy="286" rx="110" ry="22" fill="#fff" stroke="#111" stroke-width="1.4"/><text x="340" y="291">Anulează / rambursare</text>
+
+    <ellipse cx="640" cy="130" rx="118" ry="22" fill="#fff" stroke="#111" stroke-width="1.4"/><text x="640" y="135">Rezervă locurile (15 min)</text>
+    <ellipse cx="640" cy="182" rx="118" ry="22" fill="#fff" stroke="#111" stroke-width="1.4"/><text x="640" y="187">Plătește pe Stripe Checkout</text>
+    <ellipse cx="640" cy="234" rx="118" ry="22" fill="#fff" stroke="#111" stroke-width="1.4"/><text x="640" y="239">Confirmă plata (webhook)</text>
+    <ellipse cx="640" cy="306" rx="118" ry="22" fill="#fff" stroke="#111" stroke-width="1.4"/><text x="640" y="311">Primește biletele pe email</text>
+
+    <ellipse cx="340" cy="360" rx="125" ry="22" fill="#fff" stroke="#111" stroke-width="1.4"/><text x="340" y="358">Administrează evenimente</text><text x="340" y="373" font-size="11" fill="#666">(din Swagger)</text>
+    <ellipse cx="340" cy="412" rx="125" ry="22" fill="#fff" stroke="#111" stroke-width="1.4"/><text x="340" y="417">Vede vânzări și participanți</text>
+    <ellipse cx="340" cy="464" rx="125" ry="22" fill="#fff" stroke="#111" stroke-width="1.4"/><text x="340" y="469">Rambursează o comandă</text>
+    <ellipse cx="340" cy="530" rx="125" ry="22" fill="#fff" stroke="#111" stroke-width="1.4"/><text x="340" y="535">Schimbă rolul unui utilizator</text>
+
+    <ellipse cx="640" cy="430" rx="125" ry="28" fill="#fff" stroke="#111" stroke-width="2.2"/><text x="640" y="428" font-weight="600">Scanează și validează</text><text x="640" y="444" font-size="11" fill="#666">(și Organizer, Admin)</text>
+  </g>
+
+  <!-- Asocieri actor – caz -->
+  <g stroke="#111" stroke-width="1.2" fill="none">
+    <path d="M110 100 L230 80 M110 104 L230 130 M110 108 L230 182 M110 112 L230 234 M110 116 L230 286"/>
+    <path d="M110 320 L215 360 M110 324 L215 412 M110 328 L215 464"/>
+    <path d="M110 490 L215 464 M110 500 L215 530"/>
+    <path d="M890 410 L765 428"/>
+    <path d="M890 140 L758 182 M890 148 L758 234"/>
+  </g>
+
+  <!-- «include» -->
+  <g stroke="#555" stroke-width="1.3" fill="none" stroke-dasharray="5 4">
+    <path d="M450 174 L524 138" marker-end="url(#o)"/>
+    <path d="M450 184 L520 184" marker-end="url(#o)"/>
+    <path d="M640 256 L640 282" marker-end="url(#o)"/>
+  </g>
+  <g font-size="11" fill="#555" font-style="italic">
+    <text x="452" y="140">«include»</text>
+    <text x="458" y="202">«include»</text>
+    <text x="648" y="274">«include»</text>
+  </g>
+</svg>
