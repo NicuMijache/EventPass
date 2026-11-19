@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" font-family="Segoe UI, system-ui, sans-serif">
+  <title>Arhitectura finală EventPass</title>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#222"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="560" fill="#fff"/>
+
+  <!-- Clienți -->
+  <g font-size="14" text-anchor="middle" fill="#111">
+    <rect x="20" y="70" width="190" height="74" rx="10" fill="#fff" stroke="#111" stroke-width="1.6"/>
+    <text x="115" y="98" font-weight="600">Browser (laptop)</text>
+    <text x="115" y="118" fill="#555" font-size="13">Angular 22 · client,</text>
+    <text x="115" y="134" fill="#555" font-size="13">organizator, admin</text>
+
+    <rect x="20" y="300" width="190" height="74" rx="10" fill="#fff" stroke="#111" stroke-width="1.6"/>
+    <text x="115" y="328" font-weight="600">Telefon (staff)</text>
+    <text x="115" y="348" fill="#555" font-size="13">/scaneaza · camera</text>
+    <text x="115" y="364" fill="#555" font-size="13">jsQR, prin HTTPS</text>
+  </g>
+
+  <!-- Serverul -->
+  <rect x="270" y="30" width="430" height="400" rx="14" fill="#f5f5f3" stroke="#999" stroke-dasharray="6 4"/>
+  <text x="290" y="56" font-size="14" font-weight="600" fill="#444">Server .NET 10 · ASP.NET Core Web API</text>
+
+  <g font-size="14" text-anchor="middle" fill="#111">
+    <rect x="300" y="76" width="370" height="58" rx="10" fill="#fff" stroke="#111" stroke-width="1.6"/>
+    <text x="485" y="100" font-weight="600">Controllers (REST + JSON)</text>
+    <text x="485" y="120" fill="#555" font-size="13">JWT + roluri · validare · OpenAPI / Swagger</text>
+
+    <rect x="300" y="160" width="370" height="96" rx="10" fill="#fff" stroke="#111" stroke-width="1.6"/>
+    <text x="485" y="184" font-weight="600">Servicii (regulile de business)</text>
+    <text x="485" y="206" fill="#555" font-size="13">Rezervări (stoc) · Confirmarea plății · Rambursări</text>
+    <text x="485" y="226" fill="#555" font-size="13">Validarea biletelor · Cod QR (QRCoder) · Email</text>
+    <text x="485" y="246" fill="#555" font-size="13">IPaymentGateway · IEmailSender (înlocuibile în teste)</text>
+
+    <rect x="300" y="282" width="178" height="70" rx="10" fill="#fff" stroke="#111" stroke-width="1.6"/>
+    <text x="389" y="306" font-weight="600">Proces de fundal</text>
+    <text x="389" y="324" fill="#555" font-size="12.5">rezervări expirate (30 s)</text>
+    <text x="389" y="340" fill="#555" font-size="12.5">+ verificare la Stripe</text>
+
+    <rect x="492" y="282" width="178" height="70" rx="10" fill="#fff" stroke="#111" stroke-width="1.6"/>
+    <text x="581" y="306" font-weight="600">Proces de fundal</text>
+    <text x="581" y="324" fill="#555" font-size="12.5">trimiterea emailurilor</text>
+    <text x="581" y="340" fill="#555" font-size="12.5">cu reîncercări (2, 4, 8… min)</text>
+
+    <rect x="300" y="372" width="370" height="40" rx="10" fill="#fff" stroke="#111" stroke-width="1.6"/>
+    <text x="485" y="397" font-weight="600">EF Core 10 (Npgsql) · migrări</text>
+  </g>
+
+  <!-- Baza de date -->
+  <g font-size="14" text-anchor="middle" fill="#111">
+    <path d="M405 470 a80 14 0 0 0 160 0 v50 a80 14 0 0 1 -160 0 z" fill="#fff" stroke="#111" stroke-width="1.6"/>
+    <ellipse cx="485" cy="470" rx="80" ry="14" fill="#fff" stroke="#111" stroke-width="1.6"/>
+    <text x="485" y="504" font-weight="600">PostgreSQL 18</text>
+    <text x="485" y="522" fill="#555" font-size="12.5">CHECK · indexuri unice</text>
+  </g>
+
+  <!-- Externe -->
+  <g font-size="14" text-anchor="middle" fill="#111">
+    <rect x="770" y="70" width="210" height="96" rx="10" fill="#111"/>
+    <text x="875" y="100" font-weight="600" fill="#fff">Stripe (mod test)</text>
+    <text x="875" y="122" fill="#ccc" font-size="13">Checkout: pagina de plată</text>
+    <text x="875" y="140" fill="#ccc" font-size="13">Webhooks · Refunds</text>
+    <text x="875" y="156" fill="#ccc" font-size="12">datele cardului stau aici</text>
+
+    <rect x="770" y="300" width="210" height="74" rx="10" fill="#111"/>
+    <text x="875" y="330" font-weight="600" fill="#fff">Server SMTP</text>
+    <text x="875" y="352" fill="#ccc" font-size="13">smtp4dev în dezvoltare</text>
+  </g>
+
+  <!-- Săgeți -->
+  <g stroke="#222" stroke-width="1.5" fill="none" font-size="12.5" font-family="Segoe UI, sans-serif">
+    <path d="M210 100 H300" marker-end="url(#a)"/>
+    <path d="M210 330 C250 330 255 120 300 116" marker-end="url(#a)"/>
+    <path d="M115 70 V22 H875 V70" marker-end="url(#a)" stroke-dasharray="5 4"/>
+    <path d="M770 130 C730 130 720 112 670 110" marker-end="url(#a)"/>
+    <path d="M670 200 C725 200 730 160 770 156" marker-end="url(#a)" stroke-dasharray="3 3"/>
+    <path d="M670 326 H770" marker-end="url(#a)"/>
+    <path d="M485 412 V454" marker-end="url(#a)" marker-start="url(#a)"/>
+  </g>
+  <g font-size="12.5" fill="#333">
+    <text x="216" y="122">JSON + JWT</text>
+    <text x="218" y="258" fill="#333">validare bilet</text>
+    <text x="330" y="16" fill="#333">redirecționare la plată (cardul nu trece prin serverul nostru)</text>
+    <text x="676" y="96" font-size="12">webhook semnat</text>
+    <text x="684" y="216">sesiune, verificare, rambursare</text>
+    <text x="686" y="318">MailKit</text>
+  </g>
+</svg>

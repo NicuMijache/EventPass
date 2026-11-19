@@ -141,8 +141,25 @@ dotnet tool run reportgenerator -reports:"coverage/**/coverage.cobertura.xml" -t
 ```
 
 ## Documentație
-- [Raport 2 — Proiectare și implementare minimală](docs/raport-2.md) (și în [PDF](docs/raport-2.pdf)): arhitectura, modelul de date, fluxul plății, API-ul, securitatea, testele, capturi de ecran.
-- PDF-ul se regenerează din Markdown (cu diagramele): în `docs/tools`, `npm install`, apoi `npm run raport-2`.
+- **[Raport final](docs/raport-final.md)** (și în [PDF](docs/raport-final.pdf), 35 de pagini): cerințele din Raportul 1 și cât s-a realizat, arhitectura, modelul de date, problemele grele (concurență, plăți, rambursări), securitatea, testarea cu cifre măsurate, trasabilitatea, limitările.
+- **[Prezentarea](docs/prezentare/prezentare.pptx)** (și în [PDF](docs/prezentare/prezentare.pdf)): 16 slide-uri, cu notele vorbitorului în PowerPoint.
+- **[Scenariul demonstrației](docs/demo.md)**: pregătirea, conturile de demo, pașii minut cu minut, planul B.
+- [Întrebări posibile la prezentare](docs/intrebari-prezentare.md), cu răspunsuri și locul din cod.
+- [Raport 2 — Proiectare și implementare minimală](docs/raport-2.md) (și în [PDF](docs/raport-2.pdf)).
+
+Regenerare (din `docs/tools`, după `npm install`):
+- rapoartele PDF: `npm run raport-2`, `npm run raport-final` (diagramele Mermaid incluse; cuprinsul cu numerele paginilor);
+- tabelul API din anexa raportului final, din `/openapi/v1.json` (API-ul pornit): `node api-tabel.mjs`;
+- prezentarea, din `docs/prezentare/slides.html`: `node build-slides.mjs` (are nevoie de Python cu `python-pptx`).
+
+### Demonstrația, pe scurt
+Demo-ul are baza lui de date (`eventpass_demo`, în containerul Docker), deci nu atinge datele de lucru:
+1. `powershell -ExecutionPolicy Bypass -File docs/tools/demo-reset.ps1`: reface baza de demo;
+2. `stripe listen ...` (ca mai sus) și `powershell -ExecutionPolicy Bypass -File docs/tools/demo-api.ps1 -Telefon`: API-ul, cu secretul webhook-ului luat direct din Stripe CLI;
+3. `node docs/tools/seed-demo.mjs`: conturile de demo (parola `Demo2026!`) și 7 evenimente cu postere;
+4. `npm run start:phone` în `eventpass.client`.
+
+`node docs/tools/demo-capturi.mjs` parcurge automat tot scenariul într-un Chrome real (repetiție + capturi de ecran). Detalii în [docs/demo.md](docs/demo.md).
 
 ## Secrete
 Nu se păstrează în repository. Se folosesc User Secrets local și GitHub Secrets în CI.
@@ -154,10 +171,29 @@ Nu se păstrează în repository. Se folosesc User Secrets local și GitHub Secr
 - **Pull Request** cu `Closes #<nr>`; GitHub Actions rulează build și teste
 - Progresul se vede în tabloul **GitHub Projects**
 
-## Structură (planificată)
+## Structură
 ```
-EventPass.Server/     # ASP.NET Core Web API
-EventPass.Tests/      # xUnit
-eventpass.client/     # Angular
-docker-compose.yml
+EventPass.Server/            # ASP.NET Core Web API (.NET 10)
+  Controllers/               #   endpoint-urile REST (auth, evenimente, comenzi, webhook Stripe, validare, panou)
+  Services/                  #   regulile de business: rezervări, plăți, rambursări, validare, QR, email
+    Payments/                #     Stripe (IPaymentGateway), confirmarea plății, rambursări
+    Email/                   #     MailKit, emailul cu bilete, procesul de fundal
+    Qr/                      #     QRCoder
+  Data/                      #   AppDbContext, migrările EF Core, primul Admin
+  Models/  Dtos/             #   entitățile și ce intră / iese prin API
+EventPass.Tests/             # xUnit: 300 de teste (SQLite reală, teste de cursă, gărzi pe codul sursă)
+eventpass.client/            # Angular 22 (Vitest: 186 de teste)
+  src/app/pages/             #   paginile: evenimente, login, comenzi, scanner, panoul organizatorului
+  src/app/core/              #   servicii, interceptor JWT, guards, citirea QR (jsQR, camera)
+docs/
+  raport-final.md / .pdf     # raportul final
+  raport-2.md / .pdf         # Raportul 2
+  demo.md                    # scenariul demonstrației
+  intrebari-prezentare.md    # întrebări și răspunsuri pentru prezentare
+  prezentare/                # slides.html (sursa), prezentare.pptx, prezentare.pdf
+  demo/postere/              # posterele evenimentelor de demo
+  img/                       # diagrame (SVG) și capturi de ecran (img/final: raportul final)
+  tools/                     # PDF din Markdown, prezentare, date de demo, repetiția automată
+.github/workflows/ci.yml     # CI: build, teste, acoperire, validarea Docker Compose
+docker-compose.yml           # PostgreSQL 18 + smtp4dev
 ```
